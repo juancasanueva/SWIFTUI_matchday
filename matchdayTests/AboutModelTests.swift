@@ -31,7 +31,8 @@ struct AboutModelTests {
 
     @Test func listsTheRowsInOrder() {
         let rows = AboutModel.info(bundleInfo: [:]).rows
-        #expect(rows.map(\.label) == ["Data", "Leagues", "Source"])
+        #expect(rows.map(\.label) == ["Data", "Leagues", "License", "Source"])
+        #expect(rows[2].value == "MIT")
         #expect(rows[0].value == "ESPN public site API (unofficial)")
         let leagues = rows[1].value.replacingOccurrences(of: "\u{00A0}", with: " ")
         #expect(leagues == "LaLiga · Serie A · Premier League · MLS · Champions League · Nations League")

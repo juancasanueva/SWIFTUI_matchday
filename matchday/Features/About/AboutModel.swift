@@ -43,6 +43,8 @@ nonisolated enum AboutModel {
                  value: ["LaLiga", "Serie A", "Premier League", "MLS", "Champions League", "Nations League"]
                      .map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") }
                      .joined(separator: "\u{00A0}· ")),
+        AboutRow(label: "License", value: "MIT",
+                 url: URL(string: "https://github.com/juancasanueva/SWIFTUI_matchday/blob/main/LICENSE.md")),
         AboutRow(label: "Source", value: "github.com/juancasanueva/SWIFTUI_matchday",
                  url: URL(string: "https://github.com/juancasanueva/SWIFTUI_matchday")),
     ]
