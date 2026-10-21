@@ -24,7 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		BC41CC453089102700FEF967 /* matchday.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = matchday.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC41CC453089102700FEF967 /* Matchday.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Matchday.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC41CC543089102800FEF967 /* matchdayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = matchdayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC41CC5E3089102800FEF967 /* matchdayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = matchdayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -85,7 +85,7 @@
 		BC41CC463089102700FEF967 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BC41CC453089102700FEF967 /* matchday.app */,
+				BC41CC453089102700FEF967 /* Matchday.app */,
 				BC41CC543089102800FEF967 /* matchdayTests.xctest */,
 				BC41CC5E3089102800FEF967 /* matchdayUITests.xctest */,
 			);
@@ -114,7 +114,7 @@
 			packageProductDependencies = (
 			);
 			productName = matchday;
-			productReference = BC41CC453089102700FEF967 /* matchday.app */;
+			productReference = BC41CC453089102700FEF967 /* Matchday.app */;
 			productType = "com.apple.product-type.application";
 		};
 		BC41CC533089102800FEF967 /* matchdayTests */ = {
@@ -398,11 +398,9 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z3S5JK8E38;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -413,7 +411,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.juancasanueva.matchday;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = matchday;
+				PRODUCT_NAME = Matchday;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -433,11 +432,9 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z3S5JK8E38;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -448,7 +445,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.juancasanueva.matchday;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = matchday;
+				PRODUCT_NAME = Matchday;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -476,7 +474,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/matchday.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/matchday";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Matchday.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Matchday";
 			};
 			name = Debug;
 		};
@@ -497,7 +495,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/matchday.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/matchday";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Matchday.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Matchday";
 			};
 			name = Release;
 		};

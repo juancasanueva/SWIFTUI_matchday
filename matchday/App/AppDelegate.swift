@@ -15,6 +15,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var aboutWindow: AboutWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before the store loads the settings; never in the unit-test host.
+        if !AppEnvironment.isHostingTests {
+            SandboxContainerMigration.live().run()
+        }
         let environment = AppEnvironment()
         self.environment = environment
         // The unit-test host gets neither polling nor a status item.

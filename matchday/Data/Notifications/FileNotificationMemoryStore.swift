@@ -16,7 +16,7 @@ nonisolated struct FileNotificationMemoryStore: NotificationMemoryStore {
         self.url = url
     }
 
-    /// `Application Support/com.juancasanueva.matchday/notified.json` (inside the sandbox container).
+    /// `Application Support/com.juancasanueva.matchday/notified.json`.
     static func defaultURL() -> URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
