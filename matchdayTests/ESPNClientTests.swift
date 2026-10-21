@@ -57,6 +57,46 @@ struct ESPNClientTests {
         }
     }
 
+    @Test func oversizedBodyIsRejected() async {
+        let huge = Data(count: ESPNClient.maxBodySize + 1)
+        let client = ESPNClient(transport: FakeTransport { _ in .data(huge) }, calendar: utcCalendar())
+        await #expect(throws: ESPNError.tooLarge) {
+            try await client.data(for: .teams(league: "eng.1"))
+        }
+    }
+
+    @Test func bodyAtTheSizeLimitIsAccepted() async throws {
+        let limit = Data(count: ESPNClient.maxBodySize)
+        let client = ESPNClient(transport: FakeTransport { _ in .data(limit) }, calendar: utcCalendar())
+        #expect(try await client.data(for: .teams(league: "eng.1")).count == ESPNClient.maxBodySize)
+    }
+
+    static let errorBodies: [(String, String?)] = [
+        (#"{"code":400,"message":"bad league"}"#, "bad league"),
+        (#"{"code":"x","message":"oops","detail":1}"#, "oops"),
+        (#"{"code":0,"message":"fine"}"#, nil),
+        (#"{"code":"","message":"fine"}"#, nil),
+        (#"{"code":null,"message":"fine"}"#, nil),
+        (#"{"message":"no code"}"#, nil),
+        (#"{"code":1,"message":""}"#, nil),
+        (#"{"code":1,"message":"busy","a":1,"b":2}"#, nil),
+        (#"{"events":[]}"#, nil),
+    ]
+
+    @Test(arguments: errorBodies)
+    func errorMessageDetection(body: String, message: String?) {
+        #expect(ESPNClient.errorMessage(in: Data(body.utf8)) == message)
+    }
+
+    @Test func non2xxStatusesAreErrors() async {
+        for code in [301, 404, 500] {
+            let client = ESPNClient(transport: FakeTransport { _ in .status(code, "") }, calendar: utcCalendar())
+            await #expect(throws: ESPNError.http(code)) {
+                try await client.data(for: .standings(league: "eng.1"))
+            }
+        }
+    }
+
     @Test func decodesThroughTheDataSourcePort() async throws {
         let scoreboard = try Fixture.data("scoreboard")
         let transport = FakeTransport { _ in .data(scoreboard) }

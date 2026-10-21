@@ -161,4 +161,63 @@ struct MatchRepositoryTests {
         _ = await makeRepository(transport).refreshDue(now: now, leagues: ["nope"], favorites: [])
         #expect(await transport.requestedURLs.count == League.all.count * 15)
     }
+
+    @Test func undecodableResponsesCountAsFailuresAndAreNotCached() async throws {
+        let directory = temporaryDirectory()
+        // Valid JSON that is not an ESPN payload: `events` must be an array.
+        let transport = FakeTransport { _ in .json(#"{"events":"nope","children":"nope","sports":"nope"}"#) }
+        let snapshot = await makeRepository(transport, directory: directory)
+            .refreshDue(now: now, leagues: ["eng.1"], favorites: [])
+        #expect(snapshot.status == .offline)
+        #expect(snapshot.lastError != nil)
+        #expect(snapshot.matches.isEmpty)
+
+        // Nothing was written to disk, so a restart refetches every job.
+        let second = FakeTransport(handler: espnHandler())
+        let recovered = await makeRepository(second, directory: directory)
+            .refreshDue(now: now.addingTimeInterval(10), leagues: ["eng.1"], favorites: [])
+        #expect(await second.requestedURLs.count == 15)
+        #expect(recovered.status == .ok)
+    }
+
+    @Test func errorsForEndpointsNoLongerPolledArePruned() async throws {
+        // Only the followed team's schedule fails.
+        let handler = espnHandler()
+        let transport = FakeTransport { url in
+            url.absoluteString.contains("/schedule") ? .status(500, "") : handler(url)
+        }
+        let repository = makeRepository(transport)
+        let failing = await repository.refreshDue(now: now, leagues: ["eng.1"], favorites: [arsenal])
+        #expect(failing.lastError == "HTTP Error 500")
+
+        // Unfollowing the team drops its error even though nothing new was fetched.
+        let unfollowed = await repository.refreshDue(now: now.addingTimeInterval(5), leagues: ["eng.1"], favorites: [])
+        #expect(unfollowed.lastError == nil)
+        #expect(unfollowed.status == .ok)
+    }
+
+    @Test func errorsForDisabledLeaguesArePruned() async throws {
+        let handler = espnHandler()
+        let transport = FakeTransport { url in
+            url.absoluteString.contains("/esp.1/") ? .failure : handler(url)
+        }
+        let repository = makeRepository(transport)
+        let failing = await repository.refreshDue(now: now, leagues: ["eng.1", "esp.1"], favorites: [])
+        #expect(failing.lastError != nil)
+        let narrowed = await repository.refreshDue(now: now.addingTimeInterval(5), leagues: ["eng.1"], favorites: [])
+        #expect(narrowed.lastError == nil)
+    }
+
+    @Test func overlappingRefreshesFetchEachJobOnce() async throws {
+        let transport = FakeTransport(handler: espnHandler())
+        let repository = makeRepository(transport)
+        async let first = repository.refreshDue(now: now, leagues: ["eng.1"], favorites: [])
+        async let second = repository.refreshDue(now: now, leagues: ["eng.1"], favorites: [])
+        let (a, b) = await (first, second)
+
+        #expect(await transport.requestedURLs.count == 15)
+        #expect(Set(await transport.requestedURLs).count == 15)
+        #expect(a.matches.count == 3)
+        #expect(b.matches.count == 3)
+    }
 }
