@@ -122,6 +122,26 @@ nonisolated enum PreviewData {
     static let liveElsewhereRows = Derivations.liveElsewhere(snapshot: snapshot, settings: settings, display: display)
         .map { Derivations.row(for: $0, settings: settings, filter: .all, display: display, watch: watch) }
 
+    static let laLigaTable: [StandingGroup] = {
+        let ucl = StandingZone(colorHex: "#81d6ac", description: "Champions League")
+        let uel = StandingZone(colorHex: "#b2d7f9", description: "Europa League")
+        let relegation = StandingZone(colorHex: "#ff7f84", description: "Relegation")
+        let rows: [(Team, Int, Int, Int, Int, StandingZone?)] = [
+            (barcelona, 9, 0, 0, 30, ucl), (atletico, 7, 1, 1, 11, ucl), (sevilla, 4, 2, 3, -2, uel),
+            (getafe, 2, 3, 4, -6, nil), (deportivo, 1, 4, 4, -9, relegation),
+        ]
+        let entries = rows.enumerated().map { index, row in
+            StandingEntry(rank: index + 1, team: row.0, played: row.1 + row.2 + row.3, wins: row.1, draws: row.2,
+                          losses: row.3, goalDifference: row.4, points: row.1 * 3 + row.2, zone: row.5)
+        }
+        return [StandingGroup(name: "", entries: entries)]
+    }()
+
+    static var tableGroups: [TableGroupItem] {
+        Derivations.tableGroups(league: "esp.1", snapshot: MatchSnapshot(tables: ["esp.1": laLigaTable]),
+                                settings: settings)
+    }
+
     static func sections(_ filter: MatchFilter) -> [DaySection] {
         Derivations.daySections(snapshot: snapshot, settings: settings, filter: filter, display: display,
                                 watch: watch)

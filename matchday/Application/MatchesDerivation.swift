@@ -129,6 +129,18 @@ nonisolated extension Derivations {
 
     // MARK: Tables
 
+    /// League shown by the Tables or Teams picker: the selection while it is enabled,
+    /// else the first followed team's league (Tables, `tableLeague`), else the first
+    /// enabled league.
+    static func pickerLeague(selected: String?, settings: AppSettings, preferFollowed: Bool) -> String {
+        let enabled = settings.leagues
+        if let selected, enabled.contains(selected) { return selected }
+        if preferFollowed, let followed = settings.favorites.map(\.leagueID).first(where: enabled.contains) {
+            return followed
+        }
+        return enabled.first ?? League.laLiga.id
+    }
+
     /// A league's table groups, groups with a followed team first (Nations League has 14).
     static func tableGroups(league: String, snapshot: MatchSnapshot, settings: AppSettings) -> [TableGroupItem] {
         let groups = (snapshot.tables[league] ?? []).map { group in
