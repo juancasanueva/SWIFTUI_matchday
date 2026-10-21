@@ -237,25 +237,28 @@ actor MatchRepository {
 
     // MARK: Fetching
 
+    private static func fetch(_ endpoint: ESPNEndpoint, with client: ESPNClient) async -> (ESPNEndpoint, Result<Data, Error>) {
+        do { return (endpoint, .success(try await client.data(for: endpoint))) }
+        catch { return (endpoint, .failure(error)) }
+    }
+
     private func run(_ jobs: [ESPNEndpoint], now: Date) async {
         let client = client
         let limit = maxConcurrentRequests
+        // A static task body instead of a local function capturing the inout group:
+        // that pattern crashed optimized (Release) builds while reading the endpoint.
         let results = await withTaskGroup(of: (ESPNEndpoint, Result<Data, Error>).self) { group in
             var pending = jobs.makeIterator()
             var collected: [(ESPNEndpoint, Result<Data, Error>)] = []
-            func launch(_ endpoint: ESPNEndpoint) {
-                group.addTask {
-                    do { return (endpoint, .success(try await client.data(for: endpoint))) }
-                    catch { return (endpoint, .failure(error)) }
-                }
-            }
             for _ in 0..<limit {
                 guard let next = pending.next() else { break }
-                launch(next)
+                group.addTask { await Self.fetch(next, with: client) }
             }
             while let result = await group.next() {
                 collected.append(result)
-                if let next = pending.next() { launch(next) }
+                if let next = pending.next() {
+                    group.addTask { await Self.fetch(next, with: client) }
+                }
             }
             return collected
         }
