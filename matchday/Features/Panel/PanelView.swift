@@ -150,9 +150,11 @@ struct PanelHeader: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "soccerball")
-                .font(.system(size: 28))
-                .foregroundStyle(Theme.accent)
+            // The app icon itself, so the header always matches the AppIcon set.
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 40, height: 40)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .center, spacing: 8) {
