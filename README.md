@@ -46,6 +46,48 @@ or endorsed by ESPN; it is not intended for the App Store.
 Requests are polled on tiers (faster while a match is live) and mirrored to a
 disk cache, so launches are instant and the app degrades gracefully offline.
 
+## Install
+
+Releases need macOS 15.6 or later on Apple silicon.
+
+With [Homebrew](https://brew.sh):
+
+```sh
+brew trust juancasanueva/tap   # Homebrew 6.0.22 or later only
+brew tap juancasanueva/tap
+brew install --cask matchday
+```
+
+Homebrew 6.0.22 and later refuse to tap a third-party tap that carries a cask
+until it is trusted, which is what the first line does; skip it on older
+Homebrew. The unambiguous form is `brew install --cask juancasanueva/tap/matchday`.
+
+**Already have `Matchday.app` in `/Applications`?** Homebrew refuses to
+overwrite an app it did not place. Let it adopt the existing copy instead:
+
+```sh
+brew install --cask --adopt matchday
+```
+
+Or download the latest `Matchday-<version>.zip` from [Releases](../../releases),
+unzip it, and drag `Matchday.app` to `/Applications`. The build is notarized and
+stapled, so the first launch is an ordinary "Open" confirmation.
+
+To update, `brew upgrade --cask matchday` (or let the app update itself, below).
+To remove it, `brew uninstall --cask --zap matchday` also deletes Matchday's
+settings, caches and notification memory.
+
+## Updates
+
+Matchday updates itself with [Sparkle](https://sparkle-project.org) from an
+EdDSA-signed appcast published with each release. Right-click the ball and
+choose **Check for Updates…**, or turn on automatic checks in **Settings**
+(Updates). Automatic checking is off until you turn it on. Prereleases are never
+offered.
+
+Releases are cut by pushing a `v*` tag; see [RELEASING.md](RELEASING.md) for the
+pipeline, the one-time setup and troubleshooting.
+
 ## Build and run
 
 Requirements: macOS 15.6 or later, Xcode 26.
@@ -59,16 +101,18 @@ xcodebuild -project matchday.xcodeproj -scheme matchday -destination 'platform=m
   test -only-testing:matchdayTests
 ```
 
-Or open `matchday.xcodeproj` in Xcode and run the `matchday` scheme. The app
-is sandboxed with outgoing network access only. The first notification (or the
-**Test notification** button) asks for notification permission.
+Or open `matchday.xcodeproj` in Xcode and run the `matchday` scheme; it builds
+`Matchday.app`. The app is not sandboxed (so Sparkle can replace it in place) and
+uses the hardened runtime. The first notification (or the **Test notification**
+button) asks for notification permission.
 
-Local data lives in the sandbox container
-(`~/Library/Containers/com.juancasanueva.matchday/Data/Library/`):
+Local data lives in `~/Library/`. Settings and notification memory from an
+earlier sandboxed build are copied out of
+`~/Library/Containers/com.juancasanueva.matchday/` once, on first launch:
 
 | What | Where |
 | --- | --- |
-| Settings and followed teams | `Preferences` (UserDefaults) |
+| Settings and followed teams | `Preferences/com.juancasanueva.matchday.plist` (UserDefaults) |
 | HTTP cache | `Caches/com.juancasanueva.matchday/http` |
 | Crest images | `Caches/com.juancasanueva.matchday/logos` |
 | Notification memory | `Application Support/com.juancasanueva.matchday/notified.json` |
