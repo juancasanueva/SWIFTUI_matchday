@@ -34,7 +34,7 @@ enum Theme {
     // MARK: Metrics
 
     static let cornerRadius: CGFloat = 8
-    static let panelWidth: CGFloat = 470
+    static let panelWidth: CGFloat = 540
     static let panelHeight: CGFloat = 720
 
     // MARK: Type
