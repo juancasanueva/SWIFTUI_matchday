@@ -133,4 +133,15 @@ struct BundleUpdateKeysTests {
             .map(\.lastPathComponent)
         #expect(importing == ["SparkleUpdateChecker.swift"])
     }
+
+    /// Sparkle flips `canCheckForUpdates` to true inside `startUpdater()`, before
+    /// the observers exist; without `.initial` "Check for Updates…" stays disabled.
+    @Test func adapterObservesTheUpdatersCurrentValues() throws {
+        let adapter = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "matchday/Data/Updates/SparkleUpdateChecker.swift")
+        let source = try String(contentsOf: adapter, encoding: .utf8)
+        #expect(source.components(separatedBy: "options: [.initial, .new]").count - 1 == 2)
+        #expect(!source.contains("options: [.new]"))
+    }
 }

@@ -55,13 +55,13 @@ final class SparkleUpdateChecker: AppUpdating {
 
     /// Sparkle changes both values on the main thread, so `assumeIsolated` holds.
     private func observeUpdater() {
-        canCheckObservation = controller.updater.observe(\.canCheckForUpdates, options: [.new]) { [weak self] _, _ in
+        canCheckObservation = controller.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] _, _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.canCheckForUpdates = self.controller.updater.canCheckForUpdates
             }
         }
-        lastCheckObservation = controller.updater.observe(\.lastUpdateCheckDate, options: [.new]) { [weak self] _, _ in
+        lastCheckObservation = controller.updater.observe(\.lastUpdateCheckDate, options: [.initial, .new]) { [weak self] _, _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.lastUpdateCheckDate = self.controller.updater.lastUpdateCheckDate
