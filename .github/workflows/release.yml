@@ -14,8 +14,12 @@ on:
 permissions:
   contents: write
 
+# One group for every tag, not one per ref: a stable run fetches the live feed,
+# prepends its item and redeploys the whole site, so two runs in flight at once
+# would each publish a feed without the other's item. Queued, the second run
+# fetches the feed the first one deployed.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-feed
   cancel-in-progress: false        # never cancel a run mid-notarization
 
 jobs:
@@ -65,7 +69,11 @@ jobs:
           # The endpoint answers 200 for every SHA it is asked about, deployed
           # or not; what separates the two is the `status` in the body —
           # `succeed` against an empty string. A check that read the HTTP code
-          # would refuse every release.
+          # would refuse every release. Only `succeed` puts a feed live, so a
+          # deployment that failed, was cancelled or was lost leaves the commit
+          # free, which is what RELEASING.md's "delete the release and re-run"
+          # recovery depends on. One still in flight, or a status this gate does
+          # not know, is refused rather than guessed at.
           STATUS="$(curl -sSf \
             -H "Authorization: Bearer ${RELEASE_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
@@ -74,6 +82,9 @@ jobs:
           case "$STATUS" in
             "")
               echo "No Pages deployment exists for ${GITHUB_SHA}; the feed can be published from this commit."
+              ;;
+            deployment_failed|deployment_content_failed|deployment_cancelled|deployment_attempt_error|deployment_lost)
+              echo "The last Pages deployment for ${GITHUB_SHA} ended as '${STATUS}' and never went live; the feed can be published from this commit."
               ;;
             succeed)
               echo "::error::Commit ${GITHUB_SHA} has already deployed the update feed. GitHub Pages keys a deployment by its commit and ignores a second deployment of the same one, so a second stable tag on this commit would publish a release the feed never learns about. Cut the release from a new commit."

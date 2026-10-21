@@ -77,6 +77,8 @@ Release build therefore always reports `1.0.0 (1)`.
 deployment by commit and silently ignores a second deployment of the same one,
 so a second stable tag on an already-deployed commit would publish a release the
 feed never learns about. The workflow refuses that case before building.
+Release runs share one concurrency group, so tags pushed close together queue
+and each one merges into the feed the previous run deployed.
 
 ```sh
 git switch main && git pull
@@ -156,7 +158,9 @@ git push --delete origin v1.0.0 && git tag -d v1.0.0
 its zip exist and may already be picked up by the tap, but no installed copy is
 offered the version. Prefer **cutting the next patch** (`v1.0.1`) on a new commit.
 If the cause was outside the repository (a secret, the `github-pages` tag rule, a
-transient Pages failure), delete only the release and re-run the job:
+transient Pages failure), delete only the release and re-run the job. The
+distinct-commit gate only refuses a commit whose Pages deployment **succeeded**;
+a failed, cancelled or lost deployment leaves the commit free to deploy again:
 
 ```sh
 gh release delete v1.0.0 --repo juancasanueva/SWIFTUI_matchday --yes
@@ -180,7 +184,9 @@ release by publishing a higher version.
 - **Pin Xcode fails.** The runner image dropped Xcode 26.6; update the pin to an
   Xcode the project builds with locally.
 - **Stopped at the distinct-commit gate.** This commit already deployed the
-  feed. Put the new version on a new commit and tag that.
+  feed successfully. Put the new version on a new commit and tag that. If the
+  gate reports an in-progress or unknown status instead, wait for that
+  deployment to finish and re-run.
 - **Fetch the live feed failed.** The feed answered something other than a
   usable 200 or a 404 (the first release) on every attempt. Nothing was
   published; check the URL and re-run.

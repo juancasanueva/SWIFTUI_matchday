@@ -224,6 +224,16 @@ struct ReleaseWorkflowContractTests {
         #expect(workflow.contains("- name: Delete the ephemeral keychain and the API key\n        if: always()"))
     }
 
+    /// Every stable run fetches the live feed, prepends its item and redeploys
+    /// the whole site, so two runs in flight at once would each drop the
+    /// other's item. One constant group serializes them across tags.
+    @Test func feedRunsAreSerializedAcrossTags() throws {
+        let workflow = try ReleasePipelineSources.text(ReleasePipelineSources.workflow)
+        #expect(workflow.contains("concurrency:\n  group: release-feed\n  cancel-in-progress: false"))
+        let groups = try ReleasePipelineSources.captures(#"^\s*group: (.+)$"#, in: workflow)
+        #expect(groups == ["release-feed"])
+    }
+
     @Test func everyActionIsPinnedToACommitSHA() throws {
         let workflow = try ReleasePipelineSources.text(ReleasePipelineSources.workflow)
         let uses = try ReleasePipelineSources.captures(#"uses: (\S+)"#, in: workflow)
@@ -231,5 +241,79 @@ struct ReleaseWorkflowContractTests {
         for action in uses {
             #expect(action.range(of: #"@[0-9a-f]{40}$"#, options: .regularExpression) != nil, "\(action)")
         }
+    }
+}
+
+/// Runs the distinct-commit gate's own shell, as written in the workflow,
+/// against a stand-in `curl` that answers with a chosen Pages status.
+@Suite("Release workflow distinct-commit gate")
+struct DistinctCommitGateTests {
+    static let stepName = "- name: Refuse a second feed deployment from this commit"
+
+    /// The `run: |` block of the gate step, dedented.
+    static func gateScript() throws -> String {
+        let lines = try ReleasePipelineSources.text(ReleasePipelineSources.workflow)
+            .components(separatedBy: "\n")
+        let step = try #require(lines.firstIndex { $0.trimmingCharacters(in: .whitespaces) == stepName })
+        let run = try #require(lines[step...].firstIndex { $0.trimmingCharacters(in: .whitespaces) == "run: |" })
+        let runIndent = lines[run].prefix { $0 == " " }.count
+        var body: [String] = []
+        for line in lines[(run + 1)...] {
+            let indent = line.prefix { $0 == " " }.count
+            if !line.trimmingCharacters(in: .whitespaces).isEmpty && indent <= runIndent { break }
+            body.append(line)
+        }
+        let indent = try #require(body.first).prefix { $0 == " " }.count
+        return body.map { String($0.dropFirst(min(indent, $0.prefix { $0 == " " }.count))) }
+            .joined(separator: "\n")
+    }
+
+    static func exitStatus(forPagesStatus status: String) throws -> Int32 {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("matchday-gate-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let curl = directory.appendingPathComponent("curl")
+        try Data(#"#!/bin/bash\#nprintf '{"status":"%s"}' "$FAKE_STATUS"\#n"#.utf8).write(to: curl)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: curl.path)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", try gateScript()]
+        process.environment = [
+            "PATH": "\(directory.path):/usr/bin:/bin",
+            "GITHUB_REPOSITORY": "juancasanueva/SWIFTUI_matchday",
+            "GITHUB_SHA": "0123456789abcdef0123456789abcdef01234567",
+            "RELEASE_TOKEN": "test-token",
+            "FAKE_STATUS": status,
+        ]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        return process.terminationStatus
+    }
+
+    @Test func aCommitPagesHasNeverDeployedPasses() throws {
+        #expect(try Self.exitStatus(forPagesStatus: "") == 0)
+    }
+
+    @Test func aCommitThatAlreadyDeployedIsRefused() throws {
+        #expect(try Self.exitStatus(forPagesStatus: "succeed") != 0)
+    }
+
+    /// RELEASING.md's recovery is "delete the release and re-run": a deployment
+    /// that never went live must not lock its commit out of the feed.
+    @Test(arguments: ["deployment_failed", "deployment_content_failed", "deployment_cancelled",
+                      "deployment_attempt_error", "deployment_lost"])
+    func aFailedDeploymentCanBeRetried(status: String) throws {
+        #expect(try Self.exitStatus(forPagesStatus: status) == 0)
+    }
+
+    /// A deployment still in flight, or a status this gate does not know, is not
+    /// proof the feed is free.
+    @Test(arguments: ["deployment_in_progress", "syncing_files", "something_new"])
+    func anUnfinishedOrUnknownStatusIsRefused(status: String) throws {
+        #expect(try Self.exitStatus(forPagesStatus: status) != 0)
     }
 }
