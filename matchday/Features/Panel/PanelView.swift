@@ -151,13 +151,13 @@ struct PanelHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "soccerball")
-                .font(.system(size: 22))
+                .font(.system(size: 28))
                 .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .center, spacing: 8) {
                     Text("Matchday")
-                        .font(Theme.font(.title, weight: .bold))
+                        .font(Theme.font(.display, weight: .bold))
                     Spacer(minLength: 8)
                     locationPill
                 }
