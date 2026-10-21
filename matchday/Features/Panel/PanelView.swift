@@ -35,8 +35,8 @@ struct PanelView: View {
         .focusable()
         .focusEffectDisabled()
         .focused($hasKeyboardFocus)
-        .onChange(of: presentation.openCount, initial: true) {
-            hasKeyboardFocus = true
+        .onChange(of: presentation.isOpen, initial: true) { _, isOpen in
+            hasKeyboardFocus = isOpen
         }
         .onKeyPress(.escape) {
             presentation.close()

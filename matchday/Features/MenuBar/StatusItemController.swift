@@ -143,7 +143,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         guard let button = statusItem.button else { return }
         if popover.isShown {
             popover.performClose(nil)
-        } else {
+        } else if presentation.shouldOpen() {
             // An `LSUIElement` app is not active, and the panel needs key
             // status for its keyboard shortcuts.
             NSApp.activate()
@@ -153,11 +153,17 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     /// Refreshes and focuses the panel on every open (Panel.qml:375).
     func popoverWillShow(_ notification: Notification) {
-        presentation.didOpen()
         Task { await store.refreshNow() }
     }
 
+    /// Focus goes to the panel only once its window is key.
     func popoverDidShow(_ notification: Notification) {
         popover.contentViewController?.view.window?.makeKey()
+        presentation.didOpen()
+    }
+
+    /// Also fires when the transient popover closes from a click outside it.
+    func popoverDidClose(_ notification: Notification) {
+        presentation.didClose()
     }
 }
