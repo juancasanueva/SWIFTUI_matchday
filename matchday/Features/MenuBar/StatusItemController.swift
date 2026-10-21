@@ -6,9 +6,12 @@
 //  the store's bar state (`StatusItemLook`) and is redrawn whenever the store
 //  changes it; the only timer is the live dot's pulse.
 //
-//  It is an `NSObject` subclass because AppKit needs one: the button uses
-//  target-action and the popover reports its transitions through
-//  `NSPopoverDelegate`.
+//  A left click toggles the popover; a right click shows the context menu
+//  (`ContextMenuModel`).
+//
+//  It is an `NSObject` subclass because AppKit needs one: the button and the
+//  menu items use target-action and the popover reports its transitions
+//  through `NSPopoverDelegate`.
 //
 
 import AppKit
@@ -22,14 +25,16 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let presentation: PanelPresentation
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
+    private let openAbout: () -> Void
 
     private var look: StatusItemLook?
     private var pulseDimmed = false
     private var pulseTask: Task<Void, Never>?
     private var reduceMotionObserver: (any NSObjectProtocol)?
 
-    init(store: MatchdayStore, launchAtLogin: LaunchAtLogin) {
+    init(store: MatchdayStore, launchAtLogin: LaunchAtLogin, openAbout: @escaping () -> Void) {
         self.store = store
+        self.openAbout = openAbout
         presentation = PanelPresentation()
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
@@ -67,7 +72,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         button.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         button.target = self
         button.action = #selector(handleClick(_:))
-        button.sendAction(on: [.leftMouseUp])
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
     }
 
     private func configurePopover(launchAtLogin: LaunchAtLogin) {
@@ -76,6 +81,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.delegate = self
         popover.contentSize = NSSize(width: Theme.panelWidth, height: Theme.panelHeight)
         presentation.onClose = { [weak self] in self?.popover.performClose(nil) }
+        presentation.onOpenAbout = openAbout
         // Hosted for the controller's whole life, so tab and chip selections
         // survive closing the panel.
         popover.contentViewController = NSHostingController(
@@ -152,7 +158,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     // MARK: - Popover
 
     @objc private func handleClick(_ sender: NSStatusBarButton) {
-        togglePopover()
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showContextMenu()
+        } else {
+            togglePopover()
+        }
     }
 
     /// Closes the popover while it is shown instead of showing it again.
@@ -182,5 +192,42 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     /// Also fires when the transient popover closes from a click outside it.
     func popoverDidClose(_ notification: Notification) {
         presentation.didClose()
+    }
+
+    // MARK: - Context menu
+
+    /// Attaches the menu, triggers the button, then detaches it, so the next
+    /// left click reaches `handleClick` instead of opening the menu.
+    private func showContextMenu() {
+        if popover.isShown { popover.performClose(nil) }
+        statusItem.menu = makeContextMenu()
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    private func makeContextMenu() -> NSMenu {
+        let menu = NSMenu()
+        for entry in ContextMenuModel.entries {
+            switch entry {
+            case .separator:
+                menu.addItem(.separator())
+            case let .item(item):
+                let menuItem = NSMenuItem(title: item.title, action: #selector(performMenuAction(_:)),
+                                          keyEquivalent: item.keyEquivalent)
+                menuItem.target = self
+                menuItem.representedObject = item.action
+                menu.addItem(menuItem)
+            }
+        }
+        return menu
+    }
+
+    @objc private func performMenuAction(_ sender: NSMenuItem) {
+        guard let action = sender.representedObject as? ContextMenuItem.Action else { return }
+        switch action {
+        case .openAbout: openAbout()
+        case .refresh: Task { await store.refreshNow() }
+        case .quit: NSApp.terminate(nil)
+        }
     }
 }

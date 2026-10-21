@@ -3,7 +3,7 @@
 //  matchday
 //
 //  SETTINGS below the Teams grid: appearance, watch country, toggles, kickoff lead time,
-//  enabled leagues, launch at login, Test notification and Refresh. Every
+//  enabled leagues, launch at login, Test notification, Refresh and About. Every
 //  change goes through the store, which persists it.
 //
 
@@ -13,6 +13,7 @@ import SwiftUI
 struct SettingsSection: View {
     @Environment(MatchdayStore.self) private var store
     @Environment(LaunchAtLogin.self) private var launchAtLogin
+    @Environment(PanelPresentation.self) private var presentation
 
     var body: some View {
         let settings = store.settings
@@ -36,7 +37,8 @@ struct SettingsSection: View {
             launchNote: launchNote,
             onOpenLoginItems: { MainAppLoginItem.openSystemSettings() },
             onTestNotification: store.sendTestNotification,
-            onRefresh: refresh
+            onRefresh: refresh,
+            onAbout: presentation.openAbout
         )
         .onAppear { launchAtLogin.refreshStatus() }
     }
@@ -84,6 +86,7 @@ struct SettingsForm: View {
     let onOpenLoginItems: () -> Void
     let onTestNotification: () -> Void
     let onRefresh: () -> Void
+    let onAbout: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -128,6 +131,8 @@ struct SettingsForm: View {
                 Button("Test notification", action: onTestNotification)
                 Button("Refresh", action: onRefresh)
                     .help("Refetch everything now")
+                Spacer(minLength: 8)
+                Button("About Matchday", action: onAbout)
             }
             .buttonStyle(OutlineButtonStyle())
         }
@@ -277,7 +282,7 @@ struct SettingCardFrame<Content: View>: View {
     }
 }
 
-/// Small bordered capsule button ("Test notification", "Refresh").
+/// Small bordered capsule button ("Test notification", "Refresh", "About Matchday").
 struct OutlineButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
@@ -313,7 +318,7 @@ struct OutlineButtonStyle: ButtonStyle {
             leagues: League.all.map { LeagueSwitch(league: $0, isOn: true, isLocked: false) },
             onSetLeague: { _, _ in },
             launchAtLogin: $flags[5], launchNote: nil, onOpenLoginItems: {},
-            onTestNotification: {}, onRefresh: {}
+            onTestNotification: {}, onRefresh: {}, onAbout: {}
         )
         .padding(16)
     }

@@ -39,4 +39,14 @@ struct PanelPresentationTests {
         let laterClick = start.addingTimeInterval(1)
         #expect(presentation.shouldOpen(at: laterClick))
     }
+
+    /// About closes the panel before the window opens, so it is not covered.
+    @Test func openAboutClosesThePanelFirst() {
+        let presentation = PanelPresentation()
+        var calls: [String] = []
+        presentation.onClose = { calls.append("close") }
+        presentation.onOpenAbout = { calls.append("about") }
+        presentation.openAbout()
+        #expect(calls == ["close", "about"])
+    }
 }

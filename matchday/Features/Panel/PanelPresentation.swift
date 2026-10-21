@@ -26,6 +26,9 @@ final class PanelPresentation {
     /// Closes the popover, set by its owner.
     @ObservationIgnored var onClose: () -> Void = {}
 
+    /// Opens the About window, set by its owner.
+    @ObservationIgnored var onOpenAbout: () -> Void = {}
+
     func didOpen() {
         isOpen = true
     }
@@ -43,5 +46,11 @@ final class PanelPresentation {
 
     func close() {
         onClose()
+    }
+
+    /// Closes the panel first, so the About window is not covered by it.
+    func openAbout() {
+        onClose()
+        onOpenAbout()
     }
 }

@@ -27,6 +27,9 @@ and optionally the live score next to it.
 - **Notifications** for followed teams: a kickoff reminder, every goal (with
   the scorer), and the full-time result. Clicking one opens the match on ESPN.
   Alerts are remembered for 7 days, so a relaunch never repeats them.
+- **About and context menu**: right-click the ball for About Matchday, Refresh
+  and Quit; Settings also has an About Matchday button. The About window shows
+  the version, data source, leagues and credits.
 - **Keyboard** in the panel: `1`–`4` switch tabs, `h`/`l` cycle the league or
   filter chips, `j`/`k` scroll, `r` refreshes, `Esc` closes the panel.
 
@@ -83,7 +86,7 @@ matchday/
   Data/         Adapters: ESPN client and mappers, HTTP and crest disk caches,
                 UserDefaults settings, broadcasters, user notifications, login item
   Features/     One folder per screen (MenuBar, Panel, Following, Matches,
-                Tables, Teams, Settings) plus Shared atoms (crest, chips, pills)
+                Tables, Teams, Settings, About) plus Shared atoms (crest, chips, pills)
 ```
 
 - Domain and derivation code is `nonisolated` and pure, so it is unit tested
@@ -106,3 +109,5 @@ Swift Testing suites in `matchdayTests/`, with ESPN JSON fixtures in
   dedupe, 7-day pruning, no alerts for goals scored before launch).
 - Crest cache (file names, `.missing` marker with 24-hour retry, shared
   downloads), panel keyboard commands, and color contrast fallbacks.
+- About content (version and build from Info.plist, rows, links) and the
+  status item context menu.
