@@ -1,0 +1,51 @@
+{
+  "team": { "id": "359", "abbreviation": "ARS", "displayName": "Arsenal" },
+  "events": [
+    {
+      "id": "401878769",
+      "date": "2026-10-18T15:30Z",
+      "week": null,
+      "links": [
+        { "href": "https://m.espn.com/soccer/match?gameId=401878769&action=summary" },
+        { "href": "https://www.espn.com/soccer/match/_/gameId/401878769/arsenal-nottingham-forest" }
+      ],
+      "competitions": [
+        {
+          "status": {
+            "displayClock": "90'+4'",
+            "type": { "name": "STATUS_FULL_TIME", "state": "post", "completed": true, "detail": "FT", "shortDetail": "FT" }
+          },
+          "competitors": [
+            {
+              "id": "393", "homeAway": "home", "winner": false,
+              "team": { "id": "393", "abbreviation": "NFO", "displayName": "Nottingham Forest", "shortDisplayName": "Nottm Forest" },
+              "score": { "value": 0.0, "displayValue": "0" },
+              "record": [{ "displayValue": "1-2-4" }]
+            },
+            {
+              "id": "359", "homeAway": "away", "winner": true,
+              "team": { "id": "359", "abbreviation": "ARS", "displayName": "Arsenal", "shortDisplayName": "Arsenal" },
+              "score": { "value": 3.0, "displayValue": "3" },
+              "record": [{ "displayValue": "6-1-0" }]
+            }
+          ],
+          "broadcasts": [{ "type": { "shortName": "STREAMING" }, "media": { "shortName": "Peacock" }, "lang": "en", "region": "us" }]
+        }
+      ]
+    },
+    {
+      "id": "401878800",
+      "date": "2026-10-25T14:00Z",
+      "competitions": [
+        {
+          "date": "2026-10-25T14:00Z",
+          "status": { "type": { "name": "STATUS_SCHEDULED", "state": "pre", "completed": false, "shortDetail": "10/25 - 2:00 PM" } },
+          "competitors": [
+            { "homeAway": "home", "team": { "id": "359", "abbreviation": "ARS", "displayName": "Arsenal", "shortDisplayName": "Arsenal" } },
+            { "homeAway": "away", "team": { "id": "382", "abbreviation": "MNC", "displayName": "Manchester City", "shortDisplayName": "Man City" } }
+          ]
+        }
+      ]
+    }
+  ]
+}

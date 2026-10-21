@@ -1,0 +1,53 @@
+{
+  "id": "23",
+  "name": "English Premier League",
+  "children": [
+    {
+      "name": "2026-27 English Premier League",
+      "standings": {
+        "entries": [
+          {
+            "team": { "id": "359", "displayName": "Arsenal", "shortDisplayName": "Arsenal", "abbreviation": "ARS" },
+            "stats": [
+              { "name": "gamesPlayed", "value": 7.0, "displayValue": "7" },
+              { "name": "wins", "value": 6.0, "displayValue": "6" },
+              { "name": "ties", "value": 1.0, "displayValue": "1" },
+              { "name": "losses", "value": 0.0, "displayValue": "0" },
+              { "name": "pointDifferential", "value": 10.0, "displayValue": "+10" },
+              { "name": "points", "value": 19.0, "displayValue": "19" },
+              { "name": "deductions", "value": 0.0, "displayValue": "" },
+              { "name": "rank", "value": 2.0, "displayValue": "2" },
+              { "name": "overall", "value": null, "displayValue": "6-1-0" }
+            ]
+          },
+          {
+            "team": { "id": "393", "displayName": "Nottingham Forest", "shortDisplayName": "Nottm Forest", "abbreviation": "NFO" },
+            "note": { "color": "#FF7F84", "description": "Relegation", "rank": 18 },
+            "stats": [
+              { "name": "gamesPlayed", "value": 7.0, "displayValue": "7" },
+              { "name": "wins", "value": 1.0, "displayValue": "1" },
+              { "name": "ties", "value": 2.0, "displayValue": "2" },
+              { "name": "losses", "value": 4.0, "displayValue": "4" },
+              { "name": "pointDifferential", "value": -6.0, "displayValue": "-6" },
+              { "name": "points", "value": 5.0, "displayValue": "5" },
+              { "name": "rank", "value": 18.0, "displayValue": "18" }
+            ]
+          },
+          {
+            "team": { "id": "382", "displayName": "Manchester City", "shortDisplayName": "Man City", "abbreviation": "MNC" },
+            "note": { "color": "#81D6AC", "description": "Champions League", "rank": 1 },
+            "stats": [
+              { "name": "gamesPlayed", "value": 7.0 },
+              { "name": "wins", "value": 7.0, "displayValue": "7" },
+              { "name": "ties", "value": 0.0, "displayValue": "0" },
+              { "name": "losses", "value": 0.0, "displayValue": "0" },
+              { "name": "pointDifferential", "value": 12.0, "displayValue": "+12" },
+              { "name": "points", "value": 21.0, "displayValue": "21" },
+              { "name": "rank", "value": 1.0, "displayValue": "1" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
