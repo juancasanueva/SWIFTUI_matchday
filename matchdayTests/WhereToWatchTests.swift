@@ -131,4 +131,11 @@ struct WhereToWatchTests {
         #expect(catalog.knowsCountry("gb"))
         #expect(!catalog.knowsCountry("FR"))
     }
+
+    @Test func emptyCatalogKnowsNoCountries() {
+        let empty = BroadcasterCatalog.empty
+        #expect(empty.countryChoices.isEmpty)
+        #expect(!empty.knowsCountry("ES"))
+        #expect(empty.services.isEmpty && empty.espnAliases.isEmpty)
+    }
 }

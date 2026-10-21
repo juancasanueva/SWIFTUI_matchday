@@ -9,10 +9,10 @@
 
 import SwiftUI
 
-/// Container: owns the league selection and reads the store.
+/// Container: reads the store; the panel owns the league selection (h/l cycle it).
 struct TablesTab: View {
     @Environment(MatchdayStore.self) private var store
-    @State private var selection: String?
+    @Binding var selection: String?
 
     var body: some View {
         let settings = store.settings
@@ -199,12 +199,13 @@ struct StandingRowView: View {
             .frame(width: StandingsMetrics.numberWidth, alignment: .trailing)
     }
 
-    /// Qualification / relegation color on the row's left edge.
+    /// Qualification / relegation color on the row's left edge; colors that
+    /// vanish on the panel (ESPN's white) fall back to the dim text color.
     @ViewBuilder
     private var zoneBar: some View {
-        if let zone = entry.zone, let color = Color(hex: zone.colorHex) {
+        if let zone = entry.zone, !zone.colorHex.isEmpty {
             Capsule()
-                .fill(color)
+                .fill(Theme.readable(hex: zone.colorHex, fallback: .dim))
                 .frame(width: 3, height: StandingsMetrics.rowHeight - 8)
         }
     }
@@ -233,7 +234,7 @@ struct ZoneLegend: View {
             ForEach(zones, id: \.description) { zone in
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(Color(hex: zone.colorHex) ?? Theme.dim)
+                        .fill(Theme.readable(hex: zone.colorHex, fallback: .dim))
                         .frame(width: 8, height: 8)
                     Text(zone.description)
                         .font(Theme.font(.caption))

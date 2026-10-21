@@ -88,11 +88,21 @@ Matchday functionality natively on macOS, for personal use.
   - Assess (base `cc7f318`): medium `slice_budget_reached` (1,152 lines) → consent granted → review (`review-ef85295d450b1a29`) **approved + acknowledged**. Boundary → `6d0d6a4`.
   - Advisory → T12/T13: test-notification no-op (`MatchdayStore.swift:146-149`, WARNING, resolved by T12); locale-dependent country order test (`MatchdayStoreTests.swift:156-162`); untested empty message/refresh (`TablesTab.swift:72-76`).
   - Open: zone color contrast fallback missing (white zone invisible); league chip selection resets across tabs; launch-at-login verified by unit tests only.
-- [ ] T12 Notifications (kickoff, goal, full time, dedupe store, open match on click) with tests — delegated
-- [ ] T13 Crest image cache, keyboard shortcuts, polish, final full build/test — delegated
+  - Hook-triggered whole-branch review (`main..a3129b4`, 8,163 lines) → consent granted → `lens_context_budget_exceeded` (terminal); covered by slice reviews.
+- [x] T12 Notifications (kickoff, goal, full time, dedupe store, open match on click) with tests — delegated — `feat/macos-matchday-t12-notifications` `76579b1` — RED compile fail → GREEN 170 tests; live: permission + "GOAL! Matchday" banner shown
+- [x] T13 Crest image cache, keyboard shortcuts, zone contrast, status-item tooltip, app icon, README, review suggestions — delegated — `feat/macos-matchday-t13-polish` `8b4417f`, `5cd4ef2`, `5569e18`, `2ea42fa` — RED → GREEN 188 tests; live: shortcuts, crest disk cache across relaunch, tooltip
+  - Assess (base `6d0d6a4`): medium `slice_budget_reached` (1,734 lines) → consent granted → review (`review-92a751f5047f0fd2`) **approved + acknowledged**. Boundary → `2ea42fa`.
+  - Follow-up fixed inline (WARNING R3-crest-transient-failure-marker): `c5d2a3e` — RED new test failed → GREEN full suite; assess `under_budget` (23 lines, pending in next slice).
+  - Remaining advisory SUGGESTIONs (not done): simultaneous goals in one refresh produce a single alert (`NotificationPlanner.swift:126-128`); status-item tooltip initial lookup (`MenuBarLabel.swift:54-56`).
+
+## Outcome (2026-10-21)
+All tasks T0–T13 done on the chain `feat/macos-matchday-t01-setup` → … → `feat/macos-matchday-t13-polish`
+(tracker `feat/macos-matchday`). 188+1 unit tests green. Five slice reviews approved.
+Not yet verified live: menu bar dot/pulse/live score during a real live match.
+Pushed 2026-10-21: tracker draft PR #1 (`feat/macos-matchday` → `main`), child PRs #2–#14 (T1–T13, each based on its parent branch). Merging is the user's decision.
 
 ## Progress
 - 2026-10-21: Exploration done (ESPN endpoints, features, screenshots mapped). Branch created. T0 done.
 
 ## Next step
-Choose chain strategy, then T1.
+Push the chain and open the tracker + child PRs (user decision); watch a live match to verify the menu bar dot/pulse/score.

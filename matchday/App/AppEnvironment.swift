@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 
 @MainActor
 final class AppEnvironment {
@@ -18,7 +19,10 @@ final class AppEnvironment {
         let calendar = Calendar.current
         let repository = MatchRepository(client: ESPNClient(transport: URLSessionTransport(), calendar: calendar),
                                          cache: HTTPCache(), calendar: calendar)
-        let sender = Self.isHostingTests ? nil : UserNotificationSender()
+        let crests = CrestLoader.shared.cache
+        let sender = Self.isHostingTests ? nil : UserNotificationSender(crestFile: { team in
+            await crests.cachedFile(kind: .team, id: team.id, dark: false)
+        })
         notificationSender = sender
         store = MatchdayStore(
             repository: repository,
@@ -43,8 +47,15 @@ final class AppEnvironment {
 
     /// The bundled broadcasters, or an empty catalog (no where-to-watch) if it is unreadable.
     private static func loadCatalog() -> BroadcasterCatalog {
-        if let catalog = try? BroadcasterCatalog.bundled() { return catalog }
-        // Every key is optional, so an empty object decodes to an empty catalog.
-        return try! BroadcasterCatalog.decode(Data("{}".utf8))
+        do {
+            return try BroadcasterCatalog.bundled()
+        } catch {
+            Logger.app.error("Bundled broadcasters unreadable: \(error.localizedDescription)")
+            return .empty
+        }
     }
+}
+
+nonisolated extension Logger {
+    static let app = Logger(subsystem: "com.juancasanueva.matchday", category: "app")
 }

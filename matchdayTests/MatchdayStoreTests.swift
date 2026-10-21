@@ -61,7 +61,8 @@ struct MatchdayStoreTests {
     }
 
     private func makeStore(_ transport: FakeTransport, settings: InMemorySettingsStore,
-                           tick: Duration = .seconds(5), notifier: MatchNotifier? = nil) throws -> MatchdayStore {
+                           tick: Duration = .seconds(5), notifier: MatchNotifier? = nil,
+                           countryLocale: Locale = Locale(identifier: "en_US")) throws -> MatchdayStore {
         let repository = MatchRepository(client: ESPNClient(transport: transport, calendar: utcCalendar()),
                                          cache: HTTPCache(directory: temporaryDirectory()),
                                          calendar: utcCalendar())
@@ -71,7 +72,7 @@ struct MatchdayStoreTests {
             settingsStore: settings,
             whereToWatch: WhereToWatch(catalog: try BroadcasterCatalog.bundled()),
             countryResolver: CountryResolver(regionCode: "US", timeZone: TimeZone(identifier: "UTC")!,
-                                             locale: Locale(identifier: "en_US")),
+                                             locale: countryLocale),
             calendar: utcCalendar(),
             locale: Locale(identifier: "en_US"),
             clock: { now },
@@ -160,6 +161,12 @@ struct MatchdayStoreTests {
         #expect(options.first == CountryOption(code: AppSettings.automaticCountry, label: "Automatic — United States"))
         #expect(options.dropFirst().map(\.code) == ["CA", "IE", "IT", "MX", "ES", "GB", "US"])
         #expect(options.last?.label == "United States")
+    }
+
+    @Test func countryOptionsSortInTheResolverLocale() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
+                                  countryLocale: Locale(identifier: "es_ES"))
+        #expect(store.countryOptions.dropFirst().map(\.code) == ["CA", "ES", "US", "IE", "IT", "MX", "GB"])
     }
 
     @Test func aCountryOutsideTheCatalogStaysSelectable() throws {
