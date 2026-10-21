@@ -57,6 +57,8 @@ struct PanelView: View {
             TablesTab(selection: $selection.tableLeague)
         case .teams:
             TeamsTab(selection: $selection.teamsLeague)
+        case .settings:
+            SettingsSection()
         }
     }
 

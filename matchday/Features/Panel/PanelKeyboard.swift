@@ -11,7 +11,7 @@
 import Foundation
 
 nonisolated enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case following, matches, tables, teams
+    case following, matches, tables, teams, settings
 
     var id: Self { self }
     var title: String { rawValue.capitalized }
@@ -27,7 +27,7 @@ nonisolated enum PanelCommand: Equatable, Sendable {
 
     init?(character: Character) {
         switch character {
-        case "1", "2", "3", "4":
+        case "1", "2", "3", "4", "5":
             guard let digit = character.wholeNumberValue else { return nil }
             self = .selectTab(PanelTab.allCases[digit - 1])
         case "h": self = .cycleFilter(-1)
@@ -54,7 +54,7 @@ nonisolated struct PanelSelection: Equatable, Sendable {
     mutating func cycleFilter(on tab: PanelTab, by step: Int, settings: AppSettings) {
         let leagues = settings.leagues
         switch tab {
-        case .following:
+        case .following, .settings:
             break
         case .matches:
             matchFilter = Self.cycle([.all, .mine] + leagues.map(MatchFilter.league), current: matchFilter, by: step)

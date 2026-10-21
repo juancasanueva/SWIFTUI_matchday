@@ -25,11 +25,6 @@ struct TeamsTab: View {
                 followedIDs: Set(settings.favorites.filter { $0.leagueID == league }.map(\.teamID)),
                 onToggleFollow: store.toggleFollow
             )
-            Rectangle()
-                .fill(Theme.faint)
-                .frame(height: 1)
-                .padding(.vertical, 4)
-            SettingsSection()
         }
     }
 }

@@ -11,7 +11,7 @@ import Testing
 struct PanelKeyboardTests {
     static let keys: [(Character, PanelCommand?)] = [
         ("1", .selectTab(.following)), ("2", .selectTab(.matches)), ("3", .selectTab(.tables)),
-        ("4", .selectTab(.teams)), ("5", nil),
+        ("4", .selectTab(.teams)), ("5", .selectTab(.settings)), ("6", nil),
         ("h", .cycleFilter(-1)), ("l", .cycleFilter(1)),
         ("j", .scroll(1)), ("k", .scroll(-1)),
         ("r", .refresh), ("R", .refresh), ("x", nil),
