@@ -42,10 +42,11 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 4. Tag the first release `v1.0.0` (or later) from its own commit.
 
 ## Tasks
-- [ ] U1 Disable App Sandbox + one-time container migration (settings, notified.json) with tests — delegated
-- [ ] U2 Sparkle updater: SPM 2.9.6, Info.plist keys, AppUpdating/SparkleUpdateChecker/AutomaticUpdateChecks/UpdatePolicy, context menu item, Settings Updates section, tests — delegated (with U1, same writer)
+- [x] U1 Disable App Sandbox + one-time container migration (settings, notified.json) with tests — delegated — `144f19e`; `PRODUCT_NAME = Matchday` (module `matchday`) → `Matchday.app`; RED missing type → GREEN; live: favorites/appearance migrated to `~/Library/Preferences`, container kept
+- [x] U2 Sparkle updater: SPM 2.9.6, Info.plist keys (`Resources/Matchday-Info.plist`), AppUpdating/SparkleUpdateChecker/AutomaticUpdateChecks/UpdatePolicy, context menu item, Settings Updates card, tests — delegated (same writer as U1) — `9c134b6`; RED → GREEN 296 tests; parent spot check TEST SUCCEEDED; codesign: no app-sandbox entitlement, Sparkle.framework embedded
 - [ ] U3 Release pipeline: scripts (release/appcast/ExportOptions), release workflow, RELEASING.md, README brew section — delegated
-- [ ] U4 Tap: `Casks/matchday.rb`, bump.yml + ci.yml entries in homebrew-tap (local commit) — delegated (parallel, other repo)
+- [x] U4 Tap: `Casks/matchday.rb`, bump.yml + ci.yml entries in homebrew-tap — delegated (parallel, other repo) — homebrew-tap `feat/matchday-cask` `925699a` (not pushed); `version "0.0.0"` + zero sha256 placeholder so the first real tag always bumps; bump skips matchday until a release exists (`unreleased: true`); CI runs offline audit only for matchday until first release
+  - Follow-up after first release: add matchday to ci.yml online audit + install/zap, drop `unreleased` flag.
 
 ## Checks
 - `xcodebuild -project matchday.xcodeproj -scheme matchday -destination 'platform=macOS' test -only-testing:matchdayTests`
