@@ -38,7 +38,9 @@ struct PanelView: View {
         switch tab {
         case .following:
             FollowingTab { tab = .teams }
-        case .matches, .tables, .teams:
+        case .matches:
+            MatchesTab()
+        case .tables, .teams:
             ComingSoonView(title: tab.title)
         }
     }

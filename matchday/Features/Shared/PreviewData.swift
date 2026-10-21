@@ -122,6 +122,11 @@ nonisolated enum PreviewData {
     static let liveElsewhereRows = Derivations.liveElsewhere(snapshot: snapshot, settings: settings, display: display)
         .map { Derivations.row(for: $0, settings: settings, filter: .all, display: display, watch: watch) }
 
+    static func sections(_ filter: MatchFilter) -> [DaySection] {
+        Derivations.daySections(snapshot: snapshot, settings: settings, filter: filter, display: display,
+                                watch: watch)
+    }
+
     // MARK: Builders
 
     enum Winner { case home, away }
