@@ -18,8 +18,8 @@ and optionally the live score next to it.
 - **Tables**: standings with qualification and relegation zones (grouped for
   MLS, the Champions League phase and the Nations League). Click a club to
   follow or unfollow it.
-- **Teams**: a crest grid to follow teams, plus the settings: watch country,
-  Spanish-language broadcasts, kickoff reminder lead, goal and full-time
+- **Teams**: a crest grid to follow teams, plus the settings: appearance (System,
+  Light or Dark), watch country, Spanish-language broadcasts, kickoff reminder lead, goal and full-time
   alerts, live score in the bar, enabled leagues, launch at login, and a test
   notification.
 - **Where to watch**: rights holders per country from a bundled

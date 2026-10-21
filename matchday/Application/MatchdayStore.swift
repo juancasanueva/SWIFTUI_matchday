@@ -138,6 +138,10 @@ final class MatchdayStore {
         updateSettings { $0.kickoffLead = minutes }
     }
 
+    func setAppearance(_ mode: AppearanceMode) {
+        updateSettings { $0.appearance = mode }
+    }
+
     /// Turns a league on or off; the last enabled league stays on.
     func setLeague(_ id: String, enabled: Bool) {
         updateSettings { $0.setLeague(id, enabled: enabled) }

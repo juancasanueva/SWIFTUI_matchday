@@ -37,6 +37,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         configureButton()
         configurePopover(launchAtLogin: launchAtLogin)
         observeBar()
+        observeAppearance()
         // Turning Reduce Motion on stops the pulse at once.
         reduceMotionObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
@@ -96,6 +97,22 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             Task { @MainActor in self?.observeBar() }
         }
         render(bar: bar)
+    }
+
+    // MARK: - Appearance
+
+    /// Themes the panel only; the status item keeps following the menu bar.
+    /// Theme's dynamic colors resolve against the popover's appearance.
+    private func observeAppearance() {
+        let mode = withObservationTracking {
+            store.settings.appearance
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeAppearance() }
+        }
+        // Any settings change re-arms this; only an actual switch re-themes.
+        let appearance = PanelAppearance.appearance(for: mode)
+        guard popover.appearance?.name != appearance?.name else { return }
+        popover.appearance = appearance
     }
 
     private func render(bar: BarState? = nil) {

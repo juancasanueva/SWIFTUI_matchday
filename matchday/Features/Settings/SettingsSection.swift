@@ -2,7 +2,7 @@
 //  SettingsSection.swift
 //  matchday
 //
-//  SETTINGS below the Teams grid: watch country, toggles, kickoff lead time,
+//  SETTINGS below the Teams grid: appearance, watch country, toggles, kickoff lead time,
 //  enabled leagues, launch at login, Test notification and Refresh. Every
 //  change goes through the store, which persists it.
 //
@@ -17,6 +17,7 @@ struct SettingsSection: View {
     var body: some View {
         let settings = store.settings
         SettingsForm(
+            appearance: Binding(get: { store.settings.appearance }, set: store.setAppearance),
             country: Binding(get: { store.selectedCountry },
                              set: { code in store.updateSettings { $0.country = code } }),
             countryOptions: store.countryOptions,
@@ -67,6 +68,7 @@ struct LeagueSwitch: Identifiable, Hashable {
 }
 
 struct SettingsForm: View {
+    @Binding var appearance: AppearanceMode
     @Binding var country: String
     let countryOptions: [CountryOption]
     @Binding var spanish: Bool
@@ -86,6 +88,7 @@ struct SettingsForm: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "SETTINGS")
+            appearancePicker
             countryPicker
             SettingCard(title: "Spanish-language channels",
                         description: "Telemundo, Universo, ESPN Deportes, FOX Deportes and friends.",
@@ -127,6 +130,23 @@ struct SettingsForm: View {
                     .help("Refetch everything now")
             }
             .buttonStyle(OutlineButtonStyle())
+        }
+    }
+
+    private var appearancePicker: some View {
+        SettingCardFrame {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Appearance")
+                    .font(Theme.font(.body, weight: .semibold))
+                Picker("Appearance", selection: $appearance) {
+                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+            }
         }
     }
 
@@ -278,11 +298,13 @@ struct OutlineButtonStyle: ButtonStyle {
 
 #if DEBUG
 #Preview {
+    @Previewable @State var appearance = AppearanceMode.system
     @Previewable @State var country = AppSettings.automaticCountry
     @Previewable @State var flags = [true, true, true, true, true, false]
     @Previewable @State var lead = 15
     ScrollView {
         SettingsForm(
+            appearance: $appearance,
             country: $country,
             countryOptions: [CountryOption(code: "auto", label: "Automatic — Madrid, Spain"),
                              CountryOption(code: "ES", label: "Spain")],

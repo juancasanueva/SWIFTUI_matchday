@@ -140,6 +140,16 @@ struct MatchdayStoreTests {
         #expect(settings.load().kickoffLead == 45)
     }
 
+    @Test func appearanceSetterPersists() throws {
+        let settings = InMemorySettingsStore()
+        let store = try makeStore(makeTransport(), settings: settings)
+        store.setAppearance(.dark)
+        #expect(store.settings.appearance == .dark)
+        #expect(settings.load().appearance == .dark)
+        store.setAppearance(.system)
+        #expect(settings.load().appearance == .system)
+    }
+
     @Test func leagueSwitchesPersistAndKeepOneLeagueOn() throws {
         var saved = AppSettings()
         saved.setLeagues(["eng.1", "ita.1"])

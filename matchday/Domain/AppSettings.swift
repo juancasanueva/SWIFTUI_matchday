@@ -30,6 +30,8 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
     var notifyFinal = true
     /// Live score text next to the menu bar icon.
     var barScore = true
+    /// Light or dark panel, or the system appearance.
+    var appearance: AppearanceMode = .system
     /// Catalog leagues this config has already been offered; `nil` for legacy configs.
     var leaguesSeen: [String]? = League.all.map(\.id)
 
@@ -92,7 +94,7 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case favorites, leagues, country, spanish, notifyKickoff, kickoffLead,
-             notifyGoals, notifyFinal, barScore, leaguesSeen
+             notifyGoals, notifyFinal, barScore, appearance, leaguesSeen
     }
 
     /// Missing keys keep their defaults so older saved settings still load.
@@ -111,6 +113,7 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
         notifyGoals = try container.decodeIfPresent(Bool.self, forKey: .notifyGoals) ?? defaults.notifyGoals
         notifyFinal = try container.decodeIfPresent(Bool.self, forKey: .notifyFinal) ?? defaults.notifyFinal
         barScore = try container.decodeIfPresent(Bool.self, forKey: .barScore) ?? defaults.barScore
+        appearance = (try? container.decodeIfPresent(AppearanceMode.self, forKey: .appearance)) ?? defaults.appearance
         leaguesSeen = try container.decodeIfPresent([String].self, forKey: .leaguesSeen)
     }
 }

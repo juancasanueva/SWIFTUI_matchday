@@ -25,6 +25,7 @@ struct AppSettingsTests {
         #expect(settings.notifyGoals)
         #expect(settings.notifyFinal)
         #expect(settings.barScore)
+        #expect(settings.appearance == .system)
     }
 
     static let leadCases: [(Int, Int)] = [(0, 1), (-5, 1), (1, 1), (45, 45), (120, 120), (500, 120)]
@@ -118,6 +119,18 @@ struct AppSettingsTests {
         #expect(settings.leagues == League.all.map(\.id))
         #expect(settings.spanish)
         #expect(settings.leaguesSeen == nil)
+        #expect(settings.appearance == .system)
+    }
+
+    @Test func appearanceDecodesFromItsRawValue() throws {
+        let json = #"{"appearance":"dark"}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        #expect(settings.appearance == .dark)
+    }
+
+    @Test func appearanceModesListSystemFirstWithTitles() {
+        #expect(AppearanceMode.allCases == [.system, .light, .dark])
+        #expect(AppearanceMode.allCases.map(\.title) == ["System", "Light", "Dark"])
     }
 }
 
@@ -146,12 +159,14 @@ struct UserDefaultsSettingsStoreTests {
         settings.spanish = false
         settings.kickoffLead = 30
         settings.barScore = false
+        settings.appearance = .light
         UserDefaultsSettingsStore(defaults: defaults).save(settings)
 
         // A fresh store over the same defaults sees the same settings (a relaunch).
         let loaded = UserDefaultsSettingsStore(defaults: defaults).load()
         #expect(loaded == settings)
         #expect(loaded.favorites == [arsenal])
+        #expect(loaded.appearance == .light)
     }
 
     @Test func settingsAreStoredAsJSONUnderOneKey() throws {
