@@ -1,0 +1,16 @@
+{
+  "sports": [
+    {
+      "leagues": [
+        {
+          "slug": "eng.1",
+          "teams": [
+            { "team": { "id": "382", "displayName": "Manchester City", "shortDisplayName": "Man City", "abbreviation": "MNC", "color": "99c5ea" } },
+            { "team": { "id": 349, "displayName": "AFC Bournemouth", "shortDisplayName": "Bournemouth", "abbreviation": "BOU", "color": "f42727" } },
+            { "team": { "id": "359", "displayName": "Arsenal", "abbreviation": "ARS" } }
+          ]
+        }
+      ]
+    }
+  ]
+}
