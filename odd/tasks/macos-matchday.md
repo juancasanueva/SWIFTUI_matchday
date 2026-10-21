@@ -99,7 +99,7 @@ Matchday functionality natively on macOS, for personal use.
 All tasks T0–T13 done on the chain `feat/macos-matchday-t01-setup` → … → `feat/macos-matchday-t13-polish`
 (tracker `feat/macos-matchday`). 188+1 unit tests green. Five slice reviews approved.
 Not yet verified live: menu bar dot/pulse/live score during a real live match.
-Delivery (push, tracker PR + child PRs, merge) is the user's decision.
+Pushed 2026-10-21: tracker draft PR #1 (`feat/macos-matchday` → `main`), child PRs #2–#14 (T1–T13, each based on its parent branch). Merging is the user's decision.
 
 ## Progress
 - 2026-10-21: Exploration done (ESPN endpoints, features, screenshots mapped). Branch created. T0 done.
