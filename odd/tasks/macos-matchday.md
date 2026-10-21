@@ -67,10 +67,11 @@ Matchday functionality natively on macOS, for personal use.
 - [x] T1 Project setup: remove SwiftData template, MenuBarExtra skeleton, LSUIElement, network entitlement — delegated (bundled with T2/T3 writer: preparation reading) — `feat/macos-matchday-t01-setup` `8c96449` — build ok, 1 test
 - [x] T2 Domain models + ESPN DTOs + normalization (events, standings, teams, schedules) with fixture tests — delegated (2+ non-trivial files) — `feat/macos-matchday-t02-domain` `0b388da` — RED 15 failing vs stub → GREEN 19 tests
 - [x] T3 HTTP client + disk cache + tiered polling scheduler (hotness, TTLs, status ok/loading/offline/stale) with tests — delegated (2+ non-trivial files) — `feat/macos-matchday-t03-data` `47137ac` — RED (missing types) → GREEN 55 tests; parent spot check: test run TEST SUCCEEDED
-  - Assess (base `main`, committed-only, untracked excluded): medium, `slice_budget_reached` (2,560 lines) → review due on T0–T3 range.
+  - Assess (base `main`, committed-only): medium, `slice_budget_reached` (2,646 lines) → consent granted → native review (reliability lens) **approved + acknowledged** (lineage `review-8966a2091423f10f`). Reviewed boundary advances to T3 head.
+  - Advisory follow-ups (non-blocking): R3 stale errors never pruned (`MatchRepository.swift:59-67`, WARNING); R3 decode-failure path untested (`MatchRepository.swift:220-230`, SUGGESTION) → folded into T6.
 - [ ] T4 Settings & favorites store (UserDefaults), league config — delegated
 - [ ] T5 Where-to-watch (bundled broadcasters.json, ESPN aliases, spanish filter, country) with tests — delegated
-- [ ] T6 App store/view model aggregating data (following cards ordering, live elsewhere, matches by day, tables) with tests — delegated
+- [ ] T6 App store/view model aggregating data (following cards ordering, live elsewhere, matches by day, tables) with tests; + review follow-ups (prune stale errors, test decode-failure path) — delegated
 - [ ] T7 Menu bar label (icon, dot, pulse, live score) + panel shell, header, tab bar — delegated
 - [ ] T8 Following tab (team cards, form, countdown, watch pills, last/then, live events) — delegated
 - [ ] T9 Matches tab (filters, day sections, results, rows) — delegated
