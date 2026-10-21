@@ -1,0 +1,253 @@
+name: Release
+
+# The only publishing path for Matchday. A pushed version tag is the
+# single trigger: this job holds a Developer ID certificate and an App Store
+# Connect key, so any trigger reachable by a contributor would hand both to
+# whoever reached it. `scripts/release.sh` carries the build sequence and runs
+# the same way locally, but it can neither select a repository nor publish
+# anything.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false        # never cancel a run mid-notarization
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 90
+    # A job-level `permissions:` block **replaces** the workflow-level one
+    # rather than extending it, so `contents: write` is restated here or
+    # `gh release create` silently loses its token — a failure that would only
+    # appear on a real tag, after Apple had already been asked for a
+    # notarization round trip. `pages: write` authorizes the Pages deployment
+    # and `id-token: write` is what mints the OIDC token that deployment must
+    # present.
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    # GitHub requires Pages deployments to target this environment.
+    environment: github-pages
+    steps:
+      - name: Refuse to publish from a private repository
+        if: ${{ github.event.repository.private }}
+        run: |
+          echo "::error::Repository is private; release assets are not anonymously downloadable."
+          exit 1
+
+      # GitHub Pages keys a deployment by its build version, and the build
+      # version is the commit SHA — the deployments API rejects anything that is
+      # not a commit in this repository. A commit Pages has already deployed is
+      # therefore not redeployable: the request is accepted, reports `succeed`,
+      # and the previously published site keeps being served. Two stable tags
+      # can point at one commit, and that path would leave every installed copy
+      # reading a feed that never learned about the newer release.
+      #
+      # So the check happens here, next to the other refusal, and not at the
+      # deploy step: by then the release exists on the tag and Apple has already
+      # been asked for a notarization round trip, and there is no way back.
+      - name: Refuse a second feed deployment from this commit
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          # `github.token` rather than a repository secret: reading the
+          # deployment state needs nothing wider than the job already holds.
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail                       # never traced: tracing prints the token
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/deployments/${GITHUB_SHA}"
+          # The endpoint answers 200 for every SHA it is asked about, deployed
+          # or not; what separates the two is the `status` in the body —
+          # `succeed` against an empty string. A check that read the HTTP code
+          # would refuse every release.
+          STATUS="$(curl -sSf \
+            -H "Authorization: Bearer ${RELEASE_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$API" | jq -r '.status // ""')"
+          case "$STATUS" in
+            "")
+              echo "No Pages deployment exists for ${GITHUB_SHA}; the feed can be published from this commit."
+              ;;
+            succeed)
+              echo "::error::Commit ${GITHUB_SHA} has already deployed the update feed. GitHub Pages keys a deployment by its commit and ignores a second deployment of the same one, so a second stable tag on this commit would publish a release the feed never learns about. Cut the release from a new commit."
+              exit 1
+              ;;
+            *)
+              echo "::error::The Pages deployments API reports status '${STATUS}' for commit ${GITHUB_SHA}; refusing to publish a feed from it."
+              exit 1
+              ;;
+          esac
+
+      - name: Check out the tagged commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # The release is built with the Xcode the project was created and last
+      # upgraded with (Xcode 26.6, LastUpgradeCheck 2660) and its macOS 26 SDK,
+      # matching local development. The build settings rely on Swift 6.2
+      # (SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor, approachable concurrency),
+      # which only Xcode 26 compilers honour. The deployment target is macOS 15.6.
+      - name: Pin Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Derive version from tag
+        run: |
+          set -euo pipefail
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Create ephemeral keychain and import the Developer ID certificate
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          set -euo pipefail                       # never traced: tracing prints secrets
+          KEYCHAIN="$RUNNER_TEMP/matchday-release.keychain-db"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          printf '%s' "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security -f pkcs12
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          rm -f "$RUNNER_TEMP/cert.p12"
+          printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/asc.p8"
+          chmod 600 "$RUNNER_TEMP/asc.p8"
+          security find-identity -v -p codesigning "$KEYCHAIN"   # identity names only
+
+      # Archive and export sign manually with the Developer ID certificate
+      # imported above and never see the App Store Connect key. Automatic
+      # signing would hand that key to Xcode, which on a fresh runner mints a
+      # new "Created via API" Mac Development certificate every run; Apple caps
+      # those at ten per team. Only notarization needs the key.
+      - name: Archive
+        env:
+          SIGNING_STYLE: manual
+        run: scripts/release.sh archive
+
+      - name: Export and gate version and architecture
+        env:
+          SIGNING_STYLE: manual
+        run: scripts/release.sh export
+
+      - name: Package
+        run: scripts/release.sh package
+
+      - name: Notarize
+        env:                                  # ids are not secret material; the key is a path
+          ASC_KEY_PATH: ${{ runner.temp }}/asc.p8
+          ASC_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: scripts/release.sh notarize
+
+      - name: Staple and repackage
+        run: scripts/release.sh staple
+
+      - name: Verify the extracted artifact
+        run: scripts/release.sh verify
+
+      - name: Record signing evidence
+        run: codesign -dvvv --entitlements :- "build/export/Matchday.app" 2>&1
+
+      # The pinned Sparkle tools are downloaded and digest-checked here,
+      # **before** the release exists, for the same reason the feed is fetched
+      # next: a github.com error after Publish would strand a published release
+      # with no feed item. The build step after Publish signs with this
+      # directory and never downloads the tools. The download holds no secret;
+      # the signing key is bound only on the build step.
+      - name: Fetch the Sparkle tools
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          SPARKLE_TOOLS_DIR: ${{ runner.temp }}/sparkle-tools
+        run: scripts/appcast.sh tools
+
+      # The live feed is fetched and validated here, **before** the release
+      # exists, so a Pages or CDN failure stops the run while nothing is public:
+      # re-tagging the same commit is then safe. The build step after Publish
+      # reads this file and never fetches the feed again. It runs last before
+      # Publish, after notarization, so the copy is minutes old at most. The
+      # fetch holds no secret.
+      - name: Fetch the live feed
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          FEED_URL: https://juancasanueva.github.io/SWIFTUI_matchday/appcast.xml
+          CURRENT_FEED_FILE: ${{ runner.temp }}/current-appcast.xml
+        run: scripts/appcast.sh fetch
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PRERELEASE=""
+          case "$GITHUB_REF_NAME" in *-*) PRERELEASE="--prerelease" ;; esac
+          # --verify-tag refuses a tag that does not already exist, so this step
+          # is a consumer of the maintainer's tag and never an author of one.
+          # Nothing here deletes, unpublishes, or re-flags a previous release:
+          # withdrawing one stays a deliberate maintainer action.
+          # shellcheck disable=SC2086            # $PRERELEASE is a bare flag or empty
+          gh release create "$GITHUB_REF_NAME" "build/Matchday-${VERSION}.zip" \
+            --verify-tag --generate-notes --title "$GITHUB_REF_NAME" $PRERELEASE
+
+      # Appcast publication. Every step below, like the two fetches above, carries
+      # the same prerelease guard the publish step uses for `--prerelease`: a
+      # Pages deploy is a full-site replacement, so a prerelease reaching it
+      # with an empty artifact would blank the live feed for every installed
+      # copy.
+      #
+      # They run **after** the release exists, because the item's enclosure
+      # points at the published asset's download URL. The feed they merge into
+      # and the tools they sign with were fetched before Publish, above.
+      - name: Build the appcast
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          # The key is bound here and read from the environment onto the signing
+          # tool's standard input. It is never interpolated into a `run:` line,
+          # which the runner would echo into the step header before masking it.
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          ASSET_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/Matchday-${{ env.VERSION }}.zip
+          ZIP_PATH: build/Matchday-${{ env.VERSION }}.zip
+          # Written by "Fetch the live feed"; read, never re-fetched.
+          CURRENT_FEED_FILE: ${{ runner.temp }}/current-appcast.xml
+          # Written by "Fetch the Sparkle tools"; verified, never re-downloaded.
+          SPARKLE_TOOLS_DIR: ${{ runner.temp }}/sparkle-tools
+          # Outside the checkout, so nothing enters the repository tree and
+          # there is no new stowaway surface.
+          OUTPUT_DIR: ${{ runner.temp }}/site
+        run: scripts/appcast.sh
+
+      - name: Configure Pages
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload the site artifact
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+      # `actions/deploy-pages` sends the commit SHA as the build version and
+      # exposes no input to change it — which is exactly right: the deployments
+      # API accepts *only* a build version that is a commit in this repository.
+      # A `<sha>-<run>` string is rejected with a 404, and that rejection lands
+      # after the release has already been published. The step upstream is what
+      # guarantees this commit has not deployed before.
+      - name: Deploy to Pages
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+      - name: Delete the ephemeral keychain and the API key
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/matchday-release.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/asc.p8" "$RUNNER_TEMP/cert.p12"
