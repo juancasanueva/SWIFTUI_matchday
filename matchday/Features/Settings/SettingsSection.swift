@@ -3,7 +3,7 @@
 //  matchday
 //
 //  SETTINGS below the Teams grid: appearance, watch country, toggles, kickoff lead time,
-//  enabled leagues, launch at login, Test notification, Refresh and About. Every
+//  enabled leagues, launch at login, updates, Test notification, Refresh and About. Every
 //  change goes through the store, which persists it.
 //
 
@@ -14,6 +14,7 @@ struct SettingsSection: View {
     @Environment(MatchdayStore.self) private var store
     @Environment(LaunchAtLogin.self) private var launchAtLogin
     @Environment(PanelPresentation.self) private var presentation
+    @Environment(\.appUpdater) private var updater
 
     var body: some View {
         let settings = store.settings
@@ -36,6 +37,7 @@ struct SettingsSection: View {
             launchAtLogin: Binding(get: { launchAtLogin.isEnabled }, set: launchAtLogin.setEnabled),
             launchNote: launchNote,
             onOpenLoginItems: { MainAppLoginItem.openSystemSettings() },
+            updates: updates,
             onTestNotification: store.sendTestNotification,
             onRefresh: refresh,
             onAbout: presentation.openAbout
@@ -54,9 +56,35 @@ struct SettingsSection: View {
         return launchAtLogin.needsApproval ? "Allow Matchday in System Settings › Login Items." : nil
     }
 
+    /// `nil` without an updater (the unit-test host), which hides the card.
+    private var updates: UpdatesSettings? {
+        guard let updater else { return nil }
+        return UpdatesSettings(
+            automaticChecks: Binding(get: { updater.automaticallyChecksForUpdates },
+                                     set: { updater.automaticallyChecksForUpdates = $0 }),
+            lastChecked: UpdateCheckPresentation(lastCheck: updater.lastUpdateCheckDate, now: .now).label,
+            canCheck: UpdateCommandEnablement.isEnabled(canCheckForUpdates: updater.canCheckForUpdates),
+            onCheck: updater.checkForUpdates
+        )
+    }
+
     private func refresh() {
         Task { await store.refreshNow() }
     }
+}
+
+extension EnvironmentValues {
+    /// The app's one updater, injected by the status item; `nil` hides the Updates card.
+    @Entry var appUpdater: (any AppUpdating)?
+}
+
+/// Everything the Updates card shows and does.
+struct UpdatesSettings {
+    let automaticChecks: Binding<Bool>
+    /// "Never checked" or "Last checked …".
+    let lastChecked: String
+    let canCheck: Bool
+    let onCheck: () -> Void
 }
 
 /// One row of the Leagues card.
@@ -84,6 +112,7 @@ struct SettingsForm: View {
     @Binding var launchAtLogin: Bool
     let launchNote: String?
     let onOpenLoginItems: () -> Void
+    let updates: UpdatesSettings?
     let onTestNotification: () -> Void
     let onRefresh: () -> Void
     let onAbout: () -> Void
@@ -126,6 +155,9 @@ struct SettingsForm: View {
                             .buttonStyle(OutlineButtonStyle())
                     }
                 }
+            }
+            if let updates {
+                UpdatesCard(updates: updates)
             }
             HStack(spacing: 8) {
                 Button("Test notification", action: onTestNotification)
@@ -230,6 +262,27 @@ struct SettingsForm: View {
     }
 }
 
+/// "Automatically check for updates", when the app last looked, and a manual check.
+struct UpdatesCard: View {
+    let updates: UpdatesSettings
+
+    var body: some View {
+        SettingCard(title: "Automatically check for updates",
+                    description: "Matchday looks for a new version once a day.",
+                    isOn: updates.automaticChecks) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(updates.lastChecked)
+                    .font(Theme.font(.caption))
+                    .foregroundStyle(Theme.dim)
+                Spacer(minLength: 4)
+                Button("Check for Updates\u{2026}", action: updates.onCheck)
+                    .buttonStyle(OutlineButtonStyle())
+                    .disabled(!updates.canCheck)
+            }
+        }
+    }
+}
+
 /// Bordered card with a title, an optional description, a switch, and optional extra controls.
 struct SettingCard<Extra: View>: View {
     let title: String
@@ -318,6 +371,8 @@ struct OutlineButtonStyle: ButtonStyle {
             leagues: League.all.map { LeagueSwitch(league: $0, isOn: true, isLocked: false) },
             onSetLeague: { _, _ in },
             launchAtLogin: $flags[5], launchNote: nil, onOpenLoginItems: {},
+            updates: UpdatesSettings(automaticChecks: $flags[0], lastChecked: UpdateCheckPresentation.neverChecked,
+                                     canCheck: true, onCheck: {}),
             onTestNotification: {}, onRefresh: {}, onAbout: {}
         )
         .padding(16)

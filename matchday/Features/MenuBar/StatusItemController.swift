@@ -26,14 +26,18 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
     private let openAbout: () -> Void
+    /// `nil` in the unit-test host; the menu item is then disabled.
+    private let updater: (any AppUpdating)?
 
     private var look: StatusItemLook?
     private var pulseDimmed = false
     private var pulseTask: Task<Void, Never>?
     private var reduceMotionObserver: (any NSObjectProtocol)?
 
-    init(store: MatchdayStore, launchAtLogin: LaunchAtLogin, openAbout: @escaping () -> Void) {
+    init(store: MatchdayStore, launchAtLogin: LaunchAtLogin, updater: (any AppUpdating)?,
+         openAbout: @escaping () -> Void) {
         self.store = store
+        self.updater = updater
         self.openAbout = openAbout
         presentation = PanelPresentation()
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -89,6 +93,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
                 .environment(store)
                 .environment(launchAtLogin)
                 .environment(presentation)
+                .environment(\.appUpdater, updater)
         )
     }
 
@@ -207,7 +212,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     private func makeContextMenu() -> NSMenu {
         let menu = NSMenu()
-        for entry in ContextMenuModel.entries {
+        menu.autoenablesItems = false
+        for entry in ContextMenuModel.entries(canCheckForUpdates: updater?.canCheckForUpdates ?? false) {
             switch entry {
             case .separator:
                 menu.addItem(.separator())
@@ -216,6 +222,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
                                           keyEquivalent: item.keyEquivalent)
                 menuItem.target = self
                 menuItem.representedObject = item.action
+                menuItem.isEnabled = item.isEnabled
                 menu.addItem(menuItem)
             }
         }
@@ -226,8 +233,15 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         guard let action = sender.representedObject as? ContextMenuItem.Action else { return }
         switch action {
         case .openAbout: openAbout()
+        case .checkForUpdates: handleCheckForUpdates()
         case .refresh: Task { await store.refreshNow() }
         case .quit: NSApp.terminate(nil)
         }
+    }
+
+    /// Sparkle shows its own window, so the panel gets out of the way first.
+    private func handleCheckForUpdates() {
+        if popover.isShown { popover.performClose(nil) }
+        updater?.checkForUpdates()
     }
 }
