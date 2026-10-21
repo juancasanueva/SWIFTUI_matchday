@@ -43,7 +43,7 @@ struct PanelView: View {
         case .tables:
             TablesTab()
         case .teams:
-            ComingSoonView(title: tab.title)
+            TeamsTab()
         }
     }
 
@@ -179,23 +179,11 @@ struct PanelFooter: View {
     }
 }
 
-/// Placeholder for tabs that arrive in later tasks.
-struct ComingSoonView: View {
-    let title: String
-
-    var body: some View {
-        Text("\(title) arrives soon.")
-            .font(Theme.font(.body))
-            .foregroundStyle(Theme.dim)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
-    }
-}
-
 #Preview {
     @Previewable @State var tab = PanelTab.following
     PanelShell(summary: "NEXT RMA V RBL · TODAY 9:00 PM", location: "Madrid, Spain",
                isRefreshing: false, tab: $tab, onRefresh: {}) {
-        ComingSoonView(title: tab.title)
+        Text("\(tab.title) content")
+            .foregroundStyle(Theme.dim)
     }
 }

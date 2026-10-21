@@ -10,17 +10,20 @@ import SwiftUI
 @main
 struct MatchdayApp: App {
     @State private var store: MatchdayStore
+    @State private var launchAtLogin: LaunchAtLogin
 
     init() {
         let environment = AppEnvironment()
         environment.start()
         _store = State(initialValue: environment.store)
+        _launchAtLogin = State(initialValue: environment.launchAtLogin)
     }
 
     var body: some Scene {
         MenuBarExtra {
             PanelView()
                 .environment(store)
+                .environment(launchAtLogin)
         } label: {
             MenuBarLabelContainer(store: store)
         }

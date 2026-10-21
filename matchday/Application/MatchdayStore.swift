@@ -10,6 +10,14 @@
 import Foundation
 import Observation
 
+/// One "Watching from" choice: `auto` or an ISO country code, with its label.
+nonisolated struct CountryOption: Identifiable, Hashable, Sendable {
+    let code: String
+    let label: String
+
+    var id: String { code }
+}
+
 @Observable
 @MainActor
 final class MatchdayStore {
@@ -121,6 +129,25 @@ final class MatchdayStore {
         }
     }
 
+    /// Minutes before kickoff for the reminder, clamped to `AppSettings.kickoffLeadRange`.
+    func setKickoffLead(_ minutes: Int) {
+        updateSettings { $0.kickoffLead = minutes }
+    }
+
+    /// Turns a league on or off; the last enabled league stays on.
+    func setLeague(_ id: String, enabled: Bool) {
+        updateSettings { $0.setLeague(id, enabled: enabled) }
+    }
+
+    func canDisableLeague(_ id: String) -> Bool {
+        settings.leagues != [id]
+    }
+
+    /// Sends a sample notification so the user can check the alert style.
+    func sendTestNotification() {
+        // T12: notifications are not implemented yet.
+    }
+
     // MARK: Derived state
 
     var display: DisplayContext {
@@ -139,6 +166,28 @@ final class MatchdayStore {
             return countryResolver.automaticLabel
         }
         return countryCode.map(countryResolver.countryName(for:)) ?? setting
+    }
+
+    /// "Watching from" choices: automatic, then the countries with rights data by
+    /// localized name, plus a saved country outside the catalog (`countries`).
+    var countryOptions: [CountryOption] {
+        let automatic = CountryOption(code: AppSettings.automaticCountry,
+                                      label: "Automatic — \(countryResolver.automaticLabel)")
+        var options = whereToWatch.catalog.countryChoices
+            .map { CountryOption(code: $0.code, label: countryResolver.countryName(for: $0.code)) }
+            .sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
+        let selected = selectedCountry
+        if selected != AppSettings.automaticCountry && !options.contains(where: { $0.code == selected }) {
+            options.append(CountryOption(code: selected, label: countryResolver.countryName(for: selected)))
+        }
+        return [automatic] + options
+    }
+
+    /// The `countryOptions` code matching the saved setting.
+    var selectedCountry: String {
+        let setting = settings.country.trimmingCharacters(in: .whitespaces)
+        if setting.isEmpty || setting == AppSettings.automaticCountry { return AppSettings.automaticCountry }
+        return setting.uppercased()
     }
 
     func watchOptions(for match: Match) -> WatchOptions {

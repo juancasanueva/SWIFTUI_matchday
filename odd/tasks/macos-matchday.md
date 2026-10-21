@@ -82,8 +82,12 @@ Matchday functionality natively on macOS, for personal use.
   - Assess (base `bc5e90e`): medium `slice_budget_reached` (1,902 lines) → consent granted → review (`review-d7b8ee73355a7540`) **approved + acknowledged**. Boundary → `cc7f318`.
   - Advisory SUGGESTIONs → T13: `MenuBarLabel.swift:53-59`, `MenuBarLabel.swift:33-36`, `MatchesTab.swift:65-71`, `Theme.swift:76-80`, `AppEnvironment.swift:37-41`.
   - Open: menu bar dot/pulse/live text not visually verified (no followed team; status item hidden behind custom menu bar); `.help` tooltip likely ignored on MenuBarExtra labels.
-- [ ] T10 Tables tab (league chips, groups, zones, legend, follow toggle) — delegated
-- [ ] T11 Teams tab + Settings section (grid, toggles, country picker, kickoff lead, leagues, test notif, refresh) — delegated
+  - Hook-triggered whole-branch review (`main..19371cc`, 7,049 lines) → consent granted → `lens_context_budget_exceeded` (terminal, no authority); covered by slice reviews.
+- [x] T10 Tables tab (league chips, groups, zones, legend, follow toggle) — delegated — `feat/macos-matchday-t10-tables` `67b41e7` — RED pickerLeague compile fail → GREEN; live: matches screenshot, follow toggle works
+- [x] T11 Teams tab + Settings section (grid, toggles, country picker, kickoff lead, leagues, launch at login, test notif stub, refresh) — delegated — `feat/macos-matchday-t11-teams` `83d3bd0`, `6d0d6a4` — RED → GREEN 179 tests; parent spot check TEST SUCCEEDED
+  - Assess (base `cc7f318`): medium `slice_budget_reached` (1,152 lines) → consent granted → review (`review-ef85295d450b1a29`) **approved + acknowledged**. Boundary → `6d0d6a4`.
+  - Advisory → T12/T13: test-notification no-op (`MatchdayStore.swift:146-149`, WARNING, resolved by T12); locale-dependent country order test (`MatchdayStoreTests.swift:156-162`); untested empty message/refresh (`TablesTab.swift:72-76`).
+  - Open: zone color contrast fallback missing (white zone invisible); league chip selection resets across tabs; launch-at-login verified by unit tests only.
 - [ ] T12 Notifications (kickoff, goal, full time, dedupe store, open match on click) with tests — delegated
 - [ ] T13 Crest image cache, keyboard shortcuts, polish, final full build/test — delegated
 

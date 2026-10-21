@@ -174,7 +174,6 @@ struct StandingRowView: View {
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
         .pointerStyle(.link)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityHint(row.isFollowed ? "Unfollow" : "Follow")
         .accessibilityAddTraits(row.isFollowed ? .isSelected : [])

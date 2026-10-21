@@ -129,6 +129,47 @@ struct MatchdayStoreTests {
         #expect(!settings.load().spanish)
     }
 
+    @Test func kickoffLeadSetterClampsAndPersists() throws {
+        let settings = InMemorySettingsStore()
+        let store = try makeStore(makeTransport(), settings: settings)
+        store.setKickoffLead(0)
+        #expect(store.settings.kickoffLead == 1)
+        store.setKickoffLead(45)
+        #expect(settings.load().kickoffLead == 45)
+    }
+
+    @Test func leagueSwitchesPersistAndKeepOneLeagueOn() throws {
+        var saved = AppSettings()
+        saved.setLeagues(["eng.1", "ita.1"])
+        let settings = InMemorySettingsStore(saved)
+        let store = try makeStore(makeTransport(), settings: settings)
+        store.setLeague("ita.1", enabled: false)
+        #expect(settings.load().leagues == ["eng.1"])
+        #expect(!store.canDisableLeague("eng.1"))
+        store.setLeague("eng.1", enabled: false)
+        #expect(store.settings.leagues == ["eng.1"])
+        store.setLeague("esp.1", enabled: true)
+        #expect(settings.load().leagues == ["esp.1", "eng.1"])
+        #expect(store.canDisableLeague("eng.1"))
+    }
+
+    @Test func countryOptionsStartWithAutomaticThenNamedCatalogCountries() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore())
+        let options = store.countryOptions
+        #expect(options.first == CountryOption(code: AppSettings.automaticCountry, label: "Automatic — United States"))
+        #expect(options.dropFirst().map(\.code) == ["CA", "IE", "IT", "MX", "ES", "GB", "US"])
+        #expect(options.last?.label == "United States")
+    }
+
+    @Test func aCountryOutsideTheCatalogStaysSelectable() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore())
+        store.updateSettings { $0.country = "fr" }
+        #expect(store.countryOptions.last == CountryOption(code: "FR", label: "France"))
+        #expect(store.selectedCountry == "FR")
+        store.updateSettings { $0.country = AppSettings.automaticCountry }
+        #expect(store.selectedCountry == AppSettings.automaticCountry)
+    }
+
     @Test func refreshNowRefetchesFreshData() async throws {
         var saved = AppSettings()
         saved.setLeagues(["eng.1"])
