@@ -31,11 +31,10 @@ struct AboutModelTests {
 
     @Test func listsTheRowsInOrder() {
         let rows = AboutModel.info(bundleInfo: [:]).rows
-        #expect(rows.map(\.label) == ["Data", "Leagues", "Based on", "Source"])
+        #expect(rows.map(\.label) == ["Data", "Leagues", "Source"])
         #expect(rows[0].value == "ESPN public site API (unofficial)")
         #expect(rows[1].value.contains("LaLiga"))
         #expect(rows[1].value.contains("Nations League"))
-        #expect(rows[2].value.contains("grivera.matchday"))
     }
 
     @Test func sourceLinksToTheRepository() throws {

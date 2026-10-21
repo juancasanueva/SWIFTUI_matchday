@@ -39,7 +39,6 @@ nonisolated enum AboutModel {
         AboutRow(label: "Data", value: "ESPN public site API (unofficial)"),
         AboutRow(label: "Leagues",
                  value: "LaLiga · Serie A · Premier League · MLS · Champions League · Nations League"),
-        AboutRow(label: "Based on", value: "Omarchy \u{201C}Matchday\u{201D} plugin (grivera.matchday)"),
         AboutRow(label: "Source", value: "github.com/juancasanueva/SWIFTUI_matchday",
                  url: URL(string: "https://github.com/juancasanueva/SWIFTUI_matchday")),
     ]
