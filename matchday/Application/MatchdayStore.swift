@@ -132,6 +132,15 @@ final class MatchdayStore {
         countryResolver.countryCode(for: settings.country)
     }
 
+    /// "Watching from …" text: "Madrid, Spain" when automatic, else the chosen country.
+    var locationLabel: String {
+        let setting = settings.country.trimmingCharacters(in: .whitespaces)
+        if setting.isEmpty || setting == AppSettings.automaticCountry {
+            return countryResolver.automaticLabel
+        }
+        return countryCode.map(countryResolver.countryName(for:)) ?? setting
+    }
+
     func watchOptions(for match: Match) -> WatchOptions {
         whereToWatch.options(for: match, country: countryCode, spanish: settings.spanish)
     }

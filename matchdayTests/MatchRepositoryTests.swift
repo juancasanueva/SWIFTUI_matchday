@@ -39,7 +39,7 @@ struct MatchRepositoryTests {
         }
     }
 
-    private func makeRepository(_ transport: FakeTransport, directory: URL = temporaryDirectory()) -> MatchRepository {
+    private func makeRepository(_ transport: any HTTPTransport, directory: URL = temporaryDirectory()) -> MatchRepository {
         MatchRepository(client: ESPNClient(transport: transport, calendar: utcCalendar()),
                         cache: HTTPCache(directory: directory),
                         calendar: utcCalendar())
@@ -208,16 +208,48 @@ struct MatchRepositoryTests {
         #expect(narrowed.lastError == nil)
     }
 
-    @Test func overlappingRefreshesFetchEachJobOnce() async throws {
-        let transport = FakeTransport(handler: espnHandler())
-        let repository = makeRepository(transport)
-        async let first = repository.refreshDue(now: now, leagues: ["eng.1"], favorites: [])
-        async let second = repository.refreshDue(now: now, leagues: ["eng.1"], favorites: [])
-        let (a, b) = await (first, second)
+    /// Starts a refresh, holds its fetch pass open, and starts `second` once the
+    /// first pass is in flight and `second` has joined it.
+    private func overlap(
+        _ transport: GatedTransport,
+        _ repository: MatchRepository,
+        second favorites: [FavoriteTeam]
+    ) async -> (first: MatchSnapshot, second: MatchSnapshot) {
+        let now = now
+        let first = Task { await repository.refreshDue(now: now, leagues: ["eng.1"], favorites: []) }
+        await transport.waitForRequests(1)
+        let second = Task { await repository.refreshDue(now: now, leagues: ["eng.1"], favorites: favorites) }
+        while await repository.joinedRefreshes < 1 {
+            await Task.yield()
+        }
+        await transport.open()
+        return (await first.value, await second.value)
+    }
 
-        #expect(await transport.requestedURLs.count == 15)
-        #expect(Set(await transport.requestedURLs).count == 15)
+    @Test(.timeLimit(.minutes(1)))
+    func overlappingRefreshesFetchEachJobOnce() async throws {
+        let transport = GatedTransport(inner: FakeTransport(handler: espnHandler()))
+        let repository = makeRepository(transport)
+        let (a, b) = await overlap(transport, repository, second: [])
+
+        #expect(await transport.inner.requestedURLs.count == 15)
+        #expect(Set(await transport.inner.requestedURLs).count == 15)
         #expect(a.matches.count == 3)
         #expect(b.matches.count == 3)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func joinedRefreshWithNewFavoritesFetchesThem() async throws {
+        let transport = GatedTransport(inner: FakeTransport(handler: espnHandler()))
+        let repository = makeRepository(transport)
+        let (a, b) = await overlap(transport, repository, second: [arsenal])
+
+        // The joined pass covered the league only; a follow-up pass fetches the schedules.
+        let urls = await transport.inner.requestedURLs
+        #expect(urls.count == 15 + 2)
+        #expect(Set(urls).count == urls.count)
+        #expect(urls.contains { $0.hasSuffix("/teams/359/schedule?fixture=true") })
+        #expect(a.matches.count == 3)
+        #expect(b.matches.count == 5)
     }
 }

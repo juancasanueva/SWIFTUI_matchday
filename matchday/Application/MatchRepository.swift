@@ -37,7 +37,24 @@ actor MatchRepository {
     private var errors: [String: (message: String, at: Date)] = [:]
     private var lastSuccess: Date?
     /// The fetch pass currently running; overlapping refreshes wait for it instead of duplicating it.
-    private var inFlight: Task<Void, Never>?
+    private var inFlight: (scope: PassScope, task: Task<Void, Never>)?
+    /// Callers currently waiting on another caller's pass (observable for tests).
+    private(set) var joinedRefreshes = 0
+
+    /// What one fetch pass polls: enabled leagues and followed team keys.
+    nonisolated private struct PassScope: Sendable {
+        let leagues: Set<String>
+        let favorites: Set<String>
+
+        init(leagues: [String], favorites: [FavoriteTeam]) {
+            self.leagues = Set(MatchRepository.enabledLeagues(leagues))
+            self.favorites = Set(favorites.map(\.key))
+        }
+
+        func covers(_ other: PassScope) -> Bool {
+            leagues.isSuperset(of: other.leagues) && favorites.isSuperset(of: other.favorites)
+        }
+    }
 
     private enum Decoded {
         case matches([Match])
@@ -58,15 +75,26 @@ actor MatchRepository {
     ///
     /// A call made while another is still fetching joins that pass rather than
     /// starting its own, so overlapping refreshes never fetch an endpoint twice.
-    /// Anything the joined pass did not cover is picked up by the next refresh.
+    /// When the joined pass did not cover this call's leagues or favorites, a
+    /// follow-up pass fetches whatever is still due for them.
     func refreshDue(now: Date, leagues: [String], favorites: [FavoriteTeam]) async -> MatchSnapshot {
-        if let inFlight {
-            await inFlight.value
-        } else {
-            let pass = Task { await self.fetchDue(now: now, leagues: leagues, favorites: favorites) }
-            inFlight = pass
-            await pass.value
-            inFlight = nil
+        let request = PassScope(leagues: leagues, favorites: favorites)
+        while true {
+            if let inFlight {
+                joinedRefreshes += 1
+                await inFlight.task.value
+                joinedRefreshes -= 1
+                if inFlight.scope.covers(request) { break }
+            } else {
+                let pass = Task {
+                    await self.fetchDue(now: now, leagues: leagues, favorites: favorites)
+                    // Cleared before the task completes, so a joiner never sees a finished pass.
+                    self.inFlight = nil
+                }
+                inFlight = (request, pass)
+                await pass.value
+                break
+            }
         }
         pruneErrors(keeping: relevantKeys(now: now, leagues: Self.enabledLeagues(leagues), favorites: favorites))
         return await snapshot(now: now, leagues: leagues, favorites: favorites)
