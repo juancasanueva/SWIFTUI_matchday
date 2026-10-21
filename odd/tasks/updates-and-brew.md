@@ -59,6 +59,12 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 - Tap bump run `39655293210` success: `Casks/matchday.rb` → 1.0.0 with matching sha256.
 - Follow-up: add matchday to tap `ci.yml` online audit + install/zap and drop `unreleased` flag.
 
+## Post-release fixes (2026-10-21)
+- 1.0.0/1.0.1: "Check for Updates…" always disabled — KVO observers lacked `.initial` (the port dropped it from system-monitor). Fixed `8941f2e`, released v1.0.2.
+- 1.0.0–1.0.2: optimized builds crashed at launch (SIGSEGV in `ESPNEndpoint.cacheKey`) from a local function capturing the inout `TaskGroup` in `MatchRepository.run`. Debug builds were unaffected. Fixed `9e0cded`, released v1.0.3; the published build was smoke-launched for 20s. Tap bumped to 1.0.3.
+- v1.0.4: first end-to-end "Check for Updates…" test (1.0.3 → 1.0.4).
+- Proposed: smoke-launch the notarized app in `release.sh verify` (pending user decision).
+
 ## Checks
 - `xcodebuild -project matchday.xcodeproj -scheme matchday -destination 'platform=macOS' test -only-testing:matchdayTests`
 - Build + live launch; `codesign -d --entitlements -` shows no app-sandbox.
