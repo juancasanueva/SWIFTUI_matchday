@@ -24,6 +24,8 @@
 #                      — notarize, and archive/export when SIGNING_STYLE=automatic
 #   SIGNING_STYLE      manual (default) or automatic
 #   RELEASE_BUILD_DIR  output root, default "build" (excluded from the repository)
+#   SMOKE_SECONDS      how long the delivered app must stay up, default 20  — smoke
+#   SMOKE_BINARY       executable to launch instead of the verified app (tests) — smoke
 #
 # Signing style: `manual` signs the archive directly with the Developer ID
 # Application identity already present in the keychain and asks Apple for
@@ -74,7 +76,8 @@ phases:
   notarize   Submit the archive and wait for Apple's verdict
   staple     Staple the ticket, then repackage so the asset carries it
   verify     Re-check every claim against the copy extracted from the zip
-  all        Run the six phases above in order (the local rehearsal)
+  smoke      Launch the verified app and fail unless it stays up
+  all        Run the seven phases above in order (the local rehearsal)
 USAGE
 }
 
@@ -292,11 +295,47 @@ phase_verify() {
 	echo "==> verified $ZIP"
 }
 
+# The verify gates prove what the artifact is, not that it runs. 1.0.0-1.0.2
+# shipped an optimized build that crashed within a second of launch, which no
+# Debug-built unit test could see, so the delivered binary itself is started
+# and must still be alive SMOKE_SECONDS later.
+phase_smoke() {
+	local binary="${SMOKE_BINARY:-$VERIFIED_APP/Contents/MacOS/$PRODUCT}"
+	local seconds="${SMOKE_SECONDS:-20}"
+	echo "==> smoke (${seconds}s)"
+
+	[ -x "$binary" ] || fail "no app to launch at $binary (run verify first)"
+	mkdir -p "$BUILD"
+
+	# A watchdog marks survival after SMOKE_SECONDS and then stops the app; the
+	# phase waits on the app itself. Polling with `kill -0` is not enough: a
+	# crashed app that bash has not reaped yet is a zombie, and signalling a
+	# zombie succeeds, so a crash could pass the gate under load.
+	local survived="$BUILD/smoke.survived"
+	rm -f "$survived"
+	"$binary" >"$BUILD/smoke.log" 2>&1 &
+	local pid=$!
+	(sleep "$seconds" && touch "$survived" && kill "$pid" 2>/dev/null) &
+	local watchdog=$!
+
+	local status=0
+	wait "$pid" || status=$?
+	if [ ! -f "$survived" ]; then
+		pkill -P "$watchdog" 2>/dev/null || true
+		kill "$watchdog" 2>/dev/null || true
+		tail -n 20 "$BUILD/smoke.log" >&2 || true
+		fail "the delivered app exited before ${seconds}s with status $status"
+	fi
+	wait "$watchdog" 2>/dev/null || true
+	rm -f "$survived"
+	echo "==> smoke passed: the app stayed up for ${seconds}s"
+}
+
 main() {
 	local phase="${1:-}"
 
 	case "$phase" in
-	archive | export | package | notarize | staple | verify | all) ;;
+	archive | export | package | notarize | staple | verify | smoke | all) ;;
 	*)
 		usage
 		exit 1
@@ -313,6 +352,7 @@ main() {
 	notarize) phase_notarize ;;
 	staple) phase_staple ;;
 	verify) phase_verify ;;
+	smoke) phase_smoke ;;
 	all)
 		phase_archive
 		phase_export
@@ -320,6 +360,7 @@ main() {
 		phase_notarize
 		phase_staple
 		phase_verify
+		phase_smoke
 		;;
 	esac
 }

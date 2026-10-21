@@ -317,3 +317,56 @@ struct DistinctCommitGateTests {
         #expect(try Self.exitStatus(forPagesStatus: status) != 0)
     }
 }
+
+/// The smoke phase launches the delivered app and fails the release if it does
+/// not stay up: 1.0.0–1.0.2 shipped an optimized build that crashed at launch,
+/// which no Debug-built unit test could see.
+@Suite("Release smoke launch")
+struct ReleaseSmokeLaunchTests {
+    @Test func theScriptLaunchesTheVerifiedApp() throws {
+        let script = try ReleasePipelineSources.text(ReleasePipelineSources.releaseScript)
+        #expect(script.contains("phase_smoke() {"))
+        #expect(script.contains("smoke) phase_smoke ;;"))
+        #expect(script.contains(#"SMOKE_BINARY:-$VERIFIED_APP/Contents/MacOS/$PRODUCT"#))
+        #expect(script.contains("  smoke      "))
+    }
+
+    @Test func theWorkflowSmokesAfterVerifyAndBeforePublishing() throws {
+        let workflow = try ReleasePipelineSources.text(ReleasePipelineSources.workflow)
+        let verify = try #require(workflow.range(of: "run: scripts/release.sh verify"))
+        let smoke = try #require(workflow.range(of: "run: scripts/release.sh smoke"))
+        let publish = try #require(workflow.range(of: #"gh release create "$GITHUB_REF_NAME""#))
+        #expect(verify.upperBound < smoke.lowerBound)
+        #expect(smoke.upperBound < publish.lowerBound)
+    }
+
+    /// A stand-in binary: one that exits at once must fail the phase, one that
+    /// keeps running must pass it.
+    @Test(arguments: [("exit 3", false), ("sleep 30", true)])
+    func thePhaseFailsOnlyWhenTheAppExits(body: String, passes: Bool) throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("matchday-smoke-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let binary = directory.appendingPathComponent("fake-app")
+        try "#!/bin/bash\n\(body)\n".write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [ReleasePipelineSources.url(ReleasePipelineSources.releaseScript).path, "smoke"]
+        process.environment = [
+            "PATH": "/usr/bin:/bin",
+            "VERSION": "0.0.0",
+            "RELEASE_BUILD_DIR": directory.path,
+            "SMOKE_BINARY": binary.path,
+            "SMOKE_SECONDS": "2",
+        ]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+
+        #expect((process.terminationStatus == 0) == passes)
+    }
+}

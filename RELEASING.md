@@ -14,7 +14,7 @@ so it has no other trigger a contributor could reach.
 | File | Owns |
 |---|---|
 | `.github/workflows/release.yml` | The runner, the secrets, the ephemeral keychain, cleanup, and publication (GitHub Release + Pages) |
-| `scripts/release.sh` | The build sequence: archive → export → package → notarize → staple → verify |
+| `scripts/release.sh` | The build sequence: archive → export → package → notarize → staple → verify → smoke |
 | `scripts/appcast.sh` | The update feed: download and verify the pinned Sparkle tools, fetch the live feed, sign one zip, merge one item, emit |
 | `scripts/ExportOptions.plist` | Developer ID export, manual signing, team `Z3S5JK8E38` |
 
@@ -91,7 +91,8 @@ distinct-commit gate, Pin Xcode (26.6), keychain import, Archive, Export (gates
 version and `arm64`), Package (`Matchday-<version>.zip`), Notarize, Staple and
 repackage, Verify (Gatekeeper, staple, signature, hardened runtime, Developer ID
 team, **no app-sandbox entitlement**, architecture, version, build, bundle name
-and identifier, no release files inside the bundle), fetch the Sparkle tools and
+and identifier, no release files inside the bundle), Smoke (launch the delivered
+app; it must still be running 20 s later), fetch the Sparkle tools and
 the live feed, **Publish** (`gh release create --verify-tag --generate-notes`),
 build the appcast, deploy to Pages, delete the keychain.
 
@@ -145,7 +146,7 @@ SPARKLE_PRIVATE_KEY="$(cat ~/offline/sparkle-private.key)" scripts/appcast.sh
 `gh release create` is the line: before it nothing is public, after it the
 release exists.
 
-**Before Publish** (gates, keychain, archive through verify, the two fetches):
+**Before Publish** (gates, keychain, archive through smoke, the two fetches):
 nothing was published. A transient download failure needs only **Re-run failed
 jobs**. Otherwise fix the cause, then delete and re-push the tag; the same commit
 is fine because it never deployed:
