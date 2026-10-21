@@ -51,6 +51,14 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 
   - Branch review (`main..5076cd4`, high, 4 lenses, lineage `review-c4c7a7a4f45c3c84`): **approved + acknowledged**. Warnings fixed test-first: `6beff66` (serialized feed deploys, retry after failed Pages deploy), `dcf190e` (migration marker only after success), `115460c` (explicit `SUScheduledCheckInterval` 86400). 330 tests green; parent spot check TEST SUCCEEDED.
 
+## Delivery (2026-10-21)
+- Merged to `main` (`ab32289`) and pushed. Tap `feat/matchday-cask` rebased onto tap `main` and pushed as `2448e42`.
+- Secrets: all 7 set from local sources (Developer ID identity only, re-exported with a random password and probe-imported; API key `GF2PP6LZ22` + issuer from `~/Desktop/API KEY.txt`; random keychain password; shared Sparkle key verified against `SUPublicEDKey`). First Sparkle upload stored an error message (generate_keys refuses `/dev/stdout`) — caught and re-uploaded from a validated temp file.
+- Pages: source GitHub Actions; `github-pages` policies `main` (branch) + `v*` (tag).
+- Release `v1.0.0` on `ab32289`: run `39654804937` success; asset `Matchday-1.0.0.zip` (sha256 `e54322d0…`), `spctl`: Notarized Developer ID, stapled; appcast live with 1.0.0 (1), min 15.6, edSignature.
+- Tap bump run `39655293210` success: `Casks/matchday.rb` → 1.0.0 with matching sha256.
+- Follow-up: add matchday to tap `ci.yml` online audit + install/zap and drop `unreleased` flag.
+
 ## Checks
 - `xcodebuild -project matchday.xcodeproj -scheme matchday -destination 'platform=macOS' test -only-testing:matchdayTests`
 - Build + live launch; `codesign -d --entitlements -` shows no app-sandbox.
