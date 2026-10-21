@@ -13,7 +13,7 @@ struct FormBox: View {
 
     var body: some View {
         Text(result.outcome.rawValue)
-            .font(.system(size: size * 0.58, weight: .bold, design: .monospaced))
+            .font(.system(size: size * 0.58, weight: .bold))
             .foregroundStyle(result.outcome == .draw ? Theme.foreground : .white)
             .frame(width: size, height: size)
             .background(color, in: .rect(cornerRadius: size / 4))

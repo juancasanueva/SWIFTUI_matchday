@@ -39,9 +39,9 @@ enum Theme {
 
     // MARK: Type
 
-    /// Monospaced system font, as in the original panel.
+    /// System font (SF Pro) with tabular digits so scores, times and table columns line up.
     static func font(_ size: Size, weight: Font.Weight = .regular) -> Font {
-        .system(size: size.rawValue, weight: weight, design: .monospaced)
+        .system(size: size.rawValue, weight: weight).monospacedDigit()
     }
 
     enum Size: CGFloat {

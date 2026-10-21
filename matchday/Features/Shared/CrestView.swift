@@ -46,7 +46,7 @@ struct CrestView: View {
             .fill(Theme.readable(hex: team.colorHex, fallback: .accent).opacity(0.85))
             .overlay {
                 Text(String(abbreviation.prefix(3)))
-                    .font(.system(size: max(6, size * 0.32), weight: .bold, design: .monospaced))
+                    .font(.system(size: max(6, size * 0.32), weight: .bold))
                     .foregroundStyle(Theme.background)
                     .minimumScaleFactor(0.5)
             }
