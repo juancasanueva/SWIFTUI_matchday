@@ -75,9 +75,13 @@ Matchday functionality natively on macOS, for personal use.
 - [x] T6 App store/view model aggregating data (following cards ordering, live elsewhere, matches by day, tables) with tests; + review follow-ups (prune stale errors, decode-failure test, coalesce overlapping refreshes, client error-branch tests) — delegated — `feat/macos-matchday-t06-store` `0670d06`, `ef53ee1`, `bc5e90e` (chmod 644 broadcasters.json) — GREEN 163 tests; parent spot check TEST SUCCEEDED
   - Assess (base `c901708`): high `executable_mode` (755 JSON) → fixed → medium `slice_budget_reached` (2,582 lines) → consent granted → review (`review-7f3a9946a2462d6b`) **approved + acknowledged**. Boundary → `bc5e90e`.
   - Advisory follow-ups → T7: R3-join-drops-caller-intent (`MatchRepository.swift:63-71`, WARNING); R3-overlap-test-nondeterministic (`MatchRepositoryTests.swift:211-221`, SUGGESTION).
-- [ ] T7 Menu bar label (icon, dot, pulse, live score) + panel shell, header, tab bar — delegated
-- [ ] T8 Following tab (team cards, form, countdown, watch pills, last/then, live events) — delegated
-- [ ] T9 Matches tab (filters, day sections, results, rows) — delegated
+  - Hook-triggered whole-branch review (`main..3a125d2`, 5,218 lines) stopped `lens_context_budget_exceeded` (terminal, no authority created); covered by the per-slice reviews above.
+- [x] T7 Menu bar label (icon, dot, pulse, live score) + panel shell, header, tab bar + T6 review follow-ups — delegated — `feat/macos-matchday-t07-shell` `efe7b34`, `b8ef639` — RED joined-refresh test → GREEN; launch: panel opens with live ESPN data
+- [x] T8 Following tab (team cards, form, countdown, watch pills, last/then, live events) — delegated — `feat/macos-matchday-t08-following` `c18cbe9` — view exception: build + ImageRenderer PNGs vs screenshots
+- [x] T9 Matches tab (filters, day sections, results, rows) — delegated — `feat/macos-matchday-t09-matches` `c1697be`, `cc7f318` — GREEN 166 tests; parent spot check TEST SUCCEEDED; launch ok
+  - Assess (base `bc5e90e`): medium `slice_budget_reached` (1,902 lines) → consent granted → review (`review-d7b8ee73355a7540`) **approved + acknowledged**. Boundary → `cc7f318`.
+  - Advisory SUGGESTIONs → T13: `MenuBarLabel.swift:53-59`, `MenuBarLabel.swift:33-36`, `MatchesTab.swift:65-71`, `Theme.swift:76-80`, `AppEnvironment.swift:37-41`.
+  - Open: menu bar dot/pulse/live text not visually verified (no followed team; status item hidden behind custom menu bar); `.help` tooltip likely ignored on MenuBarExtra labels.
 - [ ] T10 Tables tab (league chips, groups, zones, legend, follow toggle) — delegated
 - [ ] T11 Teams tab + Settings section (grid, toggles, country picker, kickoff lead, leagues, test notif, refresh) — delegated
 - [ ] T12 Notifications (kickoff, goal, full time, dedupe store, open match on click) with tests — delegated

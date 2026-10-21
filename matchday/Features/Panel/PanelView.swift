@@ -38,7 +38,9 @@ struct PanelView: View {
         switch tab {
         case .following:
             FollowingTab { tab = .teams }
-        case .matches, .tables, .teams:
+        case .matches:
+            MatchesTab()
+        case .tables, .teams:
             ComingSoonView(title: tab.title)
         }
     }
@@ -97,26 +99,34 @@ struct PanelHeader: View {
                 .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Matchday")
-                    .font(Theme.font(.title, weight: .bold))
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Matchday")
+                        .font(Theme.font(.title, weight: .bold))
+                    Spacer(minLength: 8)
+                    locationPill
+                }
+                // The summary runs the full width under the title row.
                 Text(summary)
                     .font(Theme.font(.caption, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(Theme.dim)
                     .lineLimit(2)
             }
-            Spacer(minLength: 8)
-            Label("Watching from \(location)", systemImage: "mappin.and.ellipse")
-                .labelStyle(.titleAndIcon)
-                .font(Theme.font(.small))
-                .lineLimit(1)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .overlay {
-                    Capsule().strokeBorder(Theme.foreground.opacity(0.35), lineWidth: 1)
-                }
-                .help("Where to watch uses this country")
         }
+    }
+
+    private var locationPill: some View {
+        Label("Watching from \(location)", systemImage: "mappin.and.ellipse")
+            .labelStyle(.titleAndIcon)
+            .font(Theme.font(.small))
+            .lineLimit(1)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .overlay {
+                Capsule().strokeBorder(Theme.foreground.opacity(0.35), lineWidth: 1)
+            }
+            .layoutPriority(1)
+            .help("Where to watch uses this country")
     }
 }
 
