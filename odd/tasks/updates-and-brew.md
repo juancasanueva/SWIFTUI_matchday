@@ -44,7 +44,8 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 ## Tasks
 - [x] U1 Disable App Sandbox + one-time container migration (settings, notified.json) with tests — delegated — `144f19e`; `PRODUCT_NAME = Matchday` (module `matchday`) → `Matchday.app`; RED missing type → GREEN; live: favorites/appearance migrated to `~/Library/Preferences`, container kept
 - [x] U2 Sparkle updater: SPM 2.9.6, Info.plist keys (`Resources/Matchday-Info.plist`), AppUpdating/SparkleUpdateChecker/AutomaticUpdateChecks/UpdatePolicy, context menu item, Settings Updates card, tests — delegated (same writer as U1) — `9c134b6`; RED → GREEN 296 tests; parent spot check TEST SUCCEEDED; codesign: no app-sandbox entitlement, Sparkle.framework embedded
-- [ ] U3 Release pipeline: scripts (release/appcast/ExportOptions), release workflow, RELEASING.md, README brew section — delegated
+- [x] U3 Release pipeline: scripts (release/appcast/ExportOptions), release workflow, RELEASING.md, README brew section — delegated — `fffe98e` (ci), `4aed1ac` (docs), `65aed2e` (ignore `build/`); RED 22 contract tests → GREEN; bash -n, shellcheck, plutil, actionlint OK; local archive/export/package rehearsal signed with Developer ID (Z3S5JK8E38); notarize/staple/verify not run
+  - Deviations: name gate uses `CFBundleName` (no display name set); feed `minimumSystemVersion` 15.6 = deployment target.
 - [x] U4 Tap: `Casks/matchday.rb`, bump.yml + ci.yml entries in homebrew-tap — delegated (parallel, other repo) — homebrew-tap `feat/matchday-cask` `925699a` (not pushed); `version "0.0.0"` + zero sha256 placeholder so the first real tag always bumps; bump skips matchday until a release exists (`unreleased: true`); CI runs offline audit only for matchday until first release
   - Follow-up after first release: add matchday to ci.yml online audit + install/zap, drop `unreleased` flag.
 
@@ -57,4 +58,4 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 - 2026-10-21: exploration done; branch created; feature doc created.
 
 ## Next step
-U1+U2 writer and U4 tap writer in parallel; then U3.
+All tasks done. User: review/merge branch, push tap branch, add 7 secrets, enable Pages (Actions + v* tag rule), tag first release.
