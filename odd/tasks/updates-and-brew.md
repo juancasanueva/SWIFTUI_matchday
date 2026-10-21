@@ -49,6 +49,8 @@ Tap: `juancasanueva/homebrew-tap` (local clone `/Users/juancasanueva/programming
 - [x] U4 Tap: `Casks/matchday.rb`, bump.yml + ci.yml entries in homebrew-tap — delegated (parallel, other repo) — homebrew-tap `feat/matchday-cask` `925699a` (not pushed); `version "0.0.0"` + zero sha256 placeholder so the first real tag always bumps; bump skips matchday until a release exists (`unreleased: true`); CI runs offline audit only for matchday until first release
   - Follow-up after first release: add matchday to ci.yml online audit + install/zap, drop `unreleased` flag.
 
+  - Branch review (`main..5076cd4`, high, 4 lenses, lineage `review-c4c7a7a4f45c3c84`): **approved + acknowledged**. Warnings fixed test-first: `6beff66` (serialized feed deploys, retry after failed Pages deploy), `dcf190e` (migration marker only after success), `115460c` (explicit `SUScheduledCheckInterval` 86400). 330 tests green; parent spot check TEST SUCCEEDED.
+
 ## Checks
 - `xcodebuild -project matchday.xcodeproj -scheme matchday -destination 'platform=macOS' test -only-testing:matchdayTests`
 - Build + live launch; `codesign -d --entitlements -` shows no app-sandbox.
