@@ -33,9 +33,11 @@ actor MatchRepository {
     private var decoded: [String: (fetchedAt: Date, value: Decoded)] = [:]
     /// Last failure time per cache key, for the one-minute back-off.
     private var failures: [String: Date] = [:]
-    private var errors: [String: String] = [:]
-    private var latestError: String?
+    /// Latest failure message per cache key, pruned to the endpoints still polled.
+    private var errors: [String: (message: String, at: Date)] = [:]
     private var lastSuccess: Date?
+    /// The fetch pass currently running; overlapping refreshes wait for it instead of duplicating it.
+    private var inFlight: Task<Void, Never>?
 
     private enum Decoded {
         case matches([Match])
@@ -53,7 +55,24 @@ actor MatchRepository {
     // MARK: Public API
 
     /// Fetches whatever is due for `leagues` and `favorites`, then returns a snapshot.
+    ///
+    /// A call made while another is still fetching joins that pass rather than
+    /// starting its own, so overlapping refreshes never fetch an endpoint twice.
+    /// Anything the joined pass did not cover is picked up by the next refresh.
     func refreshDue(now: Date, leagues: [String], favorites: [FavoriteTeam]) async -> MatchSnapshot {
+        if let inFlight {
+            await inFlight.value
+        } else {
+            let pass = Task { await self.fetchDue(now: now, leagues: leagues, favorites: favorites) }
+            inFlight = pass
+            await pass.value
+            inFlight = nil
+        }
+        pruneErrors(keeping: relevantKeys(now: now, leagues: Self.enabledLeagues(leagues), favorites: favorites))
+        return await snapshot(now: now, leagues: leagues, favorites: favorites)
+    }
+
+    private func fetchDue(now: Date, leagues: [String], favorites: [FavoriteTeam]) async {
         let enabled = Self.enabledLeagues(leagues)
         let jobs = await dueJobs(now: now, leagues: enabled, favorites: favorites)
         if !jobs.isEmpty {
@@ -66,7 +85,6 @@ actor MatchRepository {
                 decoded[key] = nil
             }
         }
-        return await snapshot(now: now, leagues: leagues, favorites: favorites)
     }
 
     /// Marks every cached response expired (the Refresh command). Cached data stays visible.
@@ -124,7 +142,7 @@ actor MatchRepository {
             teams: teams,
             liveLeagueIDs: Set(matches.filter(\.isLive).map(\.leagueID)),
             status: status,
-            lastError: errors.isEmpty ? nil : latestError,
+            lastError: errors.values.max { $0.at < $1.at }?.message,
             lastSuccess: lastSuccess
         )
     }
@@ -236,9 +254,32 @@ actor MatchRepository {
 
     private func recordFailure(key: String, error: Error, now: Date) {
         failures[key] = now
-        let message = error.localizedDescription
-        errors[key] = message
-        latestError = message
+        errors[key] = (error.localizedDescription, now)
+    }
+
+    /// Cache keys of every endpoint polled for these leagues and favorites.
+    private func relevantKeys(now: Date, leagues: [String], favorites: [FavoriteTeam]) -> Set<String> {
+        var keys: Set<String> = []
+        for league in leagues {
+            for (_, day) in windowDays(now: now) {
+                keys.insert(ESPNEndpoint.scoreboard(league: league, day: day).cacheKey)
+            }
+            keys.insert(ESPNEndpoint.standings(league: league).cacheKey)
+            keys.insert(ESPNEndpoint.teams(league: league).cacheKey)
+        }
+        for favorite in favorites {
+            for fixture in [false, true] {
+                keys.insert(ESPNEndpoint.schedule(league: favorite.leagueID, teamID: favorite.teamID,
+                                                  fixture: fixture).cacheKey)
+            }
+        }
+        return keys
+    }
+
+    /// Drops errors of endpoints no longer polled (unfollowed teams, disabled
+    /// leagues, days that left the window) so they stop marking data offline.
+    private func pruneErrors(keeping keys: Set<String>) {
+        errors = errors.filter { keys.contains($0.key) }
     }
 
     // MARK: Decoding
