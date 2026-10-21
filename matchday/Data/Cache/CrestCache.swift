@@ -89,10 +89,12 @@ actor CrestCache {
 
     private func download(_ url: URL, to file: URL) async -> URL? {
         let manager = FileManager.default
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        // Transport errors (offline, timeouts) are transient: leave no marker so the
+        // next render retries instead of hiding the crest for a day.
+        guard let (data, response) = try? await transport.get(request) else { return nil }
         do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 15
-            let (data, response) = try await transport.get(request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 200
             guard status == 200, data.count >= Self.minimumSize, data.starts(with: Self.pngSignature) else {
                 throw CocoaError(.fileReadCorruptFile)

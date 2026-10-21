@@ -56,7 +56,20 @@ struct CrestCacheTests {
         #expect(await transport.requestedURLs.count == 1)
     }
 
-    static let badReplies: [FakeTransport.Reply] = [.status(404, ""), .json("<html>not a png</html>"), .failure]
+    static let badReplies: [FakeTransport.Reply] = [.status(404, ""), .json("<html>not a png</html>")]
+
+    @Test func transportFailuresAreRetriedWithoutAMarker() async throws {
+        let transport = FakeTransport { _ in .failure }
+        let cache = makeCache(transport)
+        #expect(await cache.file(kind: .team, id: "86", dark: false) == nil)
+        #expect(!FileManager.default.fileExists(atPath: directory.appending(path: "team-86.png.missing").path))
+
+        let png = Self.png
+        await transport.setHandler { _ in .data(png) }
+        let file = await cache.file(kind: .team, id: "86", dark: false)
+        #expect(file?.lastPathComponent == "team-86.png")
+        #expect(await transport.requestedURLs.count == 2)
+    }
 
     @Test(arguments: badReplies)
     func failuresLeaveAMissingMarker(reply: FakeTransport.Reply) async {
