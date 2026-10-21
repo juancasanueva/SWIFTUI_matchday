@@ -4,6 +4,8 @@
 <dict>
 	<key>SUFeedURL</key>
 	<string>https://juancasanueva.github.io/SWIFTUI_matchday/appcast.xml</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 	<key>SUPublicEDKey</key>
 	<string>jqReS/cOvK94pbRz/4DwMBTRMwh/0Nf5OJZ5SAfZDVs=</string>
 </dict>

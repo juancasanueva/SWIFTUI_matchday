@@ -109,6 +109,13 @@ struct BundleUpdateKeysTests {
         #expect(info["LSUIElement"] as? Bool == true)
     }
 
+    /// The Updates card promises a daily check; the bundle states it rather
+    /// than leaning on Sparkle's default.
+    @Test func theBundleChecksOnceADay() throws {
+        let info = try #require(Bundle.main.infoDictionary)
+        #expect(info["SUScheduledCheckInterval"] as? Int == 86_400)
+    }
+
     @Test func automaticChecksAreNotEnabledByTheBundle() throws {
         let info = try #require(Bundle.main.infoDictionary)
         #expect(info["SUEnableAutomaticChecks"] == nil)
