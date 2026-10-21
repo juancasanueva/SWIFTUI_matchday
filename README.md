@@ -5,8 +5,7 @@
 # Matchday
 
 A macOS menu bar app for following soccer teams: fixtures, live scores,
-results, standings, where to watch, and notifications. It is a native SwiftUI
-port of the Omarchy "Matchday" plugin.
+results, standings, where to watch, and notifications.
 
 Matchday lives only in the menu bar (no Dock icon, no main window). The ball
 icon shows a dot when a followed team plays within 12 hours (red while live),
@@ -118,12 +117,12 @@ Local data lives in `~/Library/`. Settings and notification memory from an
 earlier sandboxed build are copied out of
 `~/Library/Containers/com.juancasanueva.matchday/` once, on first launch:
 
-| What | Where |
-| --- | --- |
-| Settings and followed teams | `Preferences/com.juancasanueva.matchday.plist` (UserDefaults) |
-| HTTP cache | `Caches/com.juancasanueva.matchday/http` |
-| Crest images | `Caches/com.juancasanueva.matchday/logos` |
-| Notification memory | `Application Support/com.juancasanueva.matchday/notified.json` |
+| What                        | Where                                                          |
+| --------------------------- | -------------------------------------------------------------- |
+| Settings and followed teams | `Preferences/com.juancasanueva.matchday.plist` (UserDefaults)  |
+| HTTP cache                  | `Caches/com.juancasanueva.matchday/http`                       |
+| Crest images                | `Caches/com.juancasanueva.matchday/logos`                      |
+| Notification memory         | `Application Support/com.juancasanueva.matchday/notified.json` |
 
 ## Architecture
 
