@@ -14,7 +14,7 @@ import Observation
 @MainActor
 final class MatchdayStore {
     /// Polling interval of the refresh loop (`TICK`).
-    static let defaultTick: Duration = .seconds(5)
+    nonisolated static let defaultTick: Duration = .seconds(5)
 
     private(set) var snapshot = MatchSnapshot()
     private(set) var settings: AppSettings
@@ -161,6 +161,14 @@ final class MatchdayStore {
 
     var liveElsewhere: [Match] {
         Derivations.liveElsewhere(snapshot: snapshot, settings: settings, display: display)
+    }
+
+    /// "LIVE ELSEWHERE" rows on the Following tab.
+    var liveElsewhereRows: [MatchRowItem] {
+        let settings = settings, display = display
+        return liveElsewhere.map {
+            Derivations.row(for: $0, settings: settings, filter: .all, display: display, watch: watchOptions(for:))
+        }
     }
 
     func daySections(filter: MatchFilter) -> [DaySection] {
