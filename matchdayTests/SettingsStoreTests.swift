@@ -128,6 +128,15 @@ struct AppSettingsTests {
         #expect(settings.appearance == .dark)
     }
 
+    /// An unknown value (e.g. from a newer version) falls back to System
+    /// without failing the rest of the settings.
+    @Test func unknownAppearanceFallsBackToSystem() throws {
+        let json = #"{"appearance":"sepia","kickoffLead":30}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        #expect(settings.appearance == .system)
+        #expect(settings.kickoffLead == 30)
+    }
+
     @Test func appearanceModesListSystemFirstWithTitles() {
         #expect(AppearanceMode.allCases == [.system, .light, .dark])
         #expect(AppearanceMode.allCases.map(\.title) == ["System", "Light", "Dark"])
