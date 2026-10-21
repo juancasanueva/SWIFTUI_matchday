@@ -156,6 +156,23 @@ struct TablesDerivationTests {
         let groups = Derivations.tableGroups(league: "esp.1", snapshot: snapshot, settings: AppSettings())
         #expect(Derivations.zoneLegend(groups) == [ucl, uel])
     }
+
+    @Test func pickerKeepsAnEnabledSelection() {
+        let settings = Make.settings(following: [arsenal])
+        #expect(Derivations.pickerLeague(selected: "ita.1", settings: settings, preferFollowed: true) == "ita.1")
+    }
+
+    @Test func pickerStartsAtTheFirstFollowedTeamsLeague() {
+        let settings = Make.settings(following: [arsenal])
+        #expect(Derivations.pickerLeague(selected: nil, settings: settings, preferFollowed: true) == "uefa.nations")
+        #expect(Derivations.pickerLeague(selected: nil, settings: settings, preferFollowed: false) == "esp.1")
+    }
+
+    @Test func pickerSkipsDisabledLeagues() {
+        let settings = Make.settings(following: [arsenal], leagues: ["ita.1", "eng.1"])
+        #expect(Derivations.pickerLeague(selected: "esp.1", settings: settings, preferFollowed: true) == "ita.1")
+        #expect(Derivations.pickerLeague(selected: nil, settings: settings, preferFollowed: true) == "ita.1")
+    }
 }
 
 @Suite("Header and menu bar")
