@@ -38,7 +38,11 @@ nonisolated enum AboutModel {
     private static let rows = [
         AboutRow(label: "Data", value: "ESPN public site API (unofficial)"),
         AboutRow(label: "Leagues",
-                 value: "LaLiga · Serie A · Premier League · MLS · Champions League · Nations League"),
+                 // Non-breaking spaces keep each league name whole and its separator on
+                 // the same line, so the row only wraps between leagues.
+                 value: ["LaLiga", "Serie A", "Premier League", "MLS", "Champions League", "Nations League"]
+                     .map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") }
+                     .joined(separator: "\u{00A0}· ")),
         AboutRow(label: "Source", value: "github.com/juancasanueva/SWIFTUI_matchday",
                  url: URL(string: "https://github.com/juancasanueva/SWIFTUI_matchday")),
     ]

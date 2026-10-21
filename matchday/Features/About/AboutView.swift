@@ -14,7 +14,7 @@ struct AboutView: View {
     let info: AboutInfo
 
     /// Fixed content width; the window is sized from it and is not resizable.
-    static let width: CGFloat = 400
+    static let width: CGFloat = 480
 
     /// The asset catalog icon. `NSApp.applicationIconImage` is only the
     /// fallback: it returns the generic icon when Launch Services has not

@@ -33,8 +33,10 @@ struct AboutModelTests {
         let rows = AboutModel.info(bundleInfo: [:]).rows
         #expect(rows.map(\.label) == ["Data", "Leagues", "Source"])
         #expect(rows[0].value == "ESPN public site API (unofficial)")
-        #expect(rows[1].value.contains("LaLiga"))
-        #expect(rows[1].value.contains("Nations League"))
+        let leagues = rows[1].value.replacingOccurrences(of: "\u{00A0}", with: " ")
+        #expect(leagues == "LaLiga · Serie A · Premier League · MLS · Champions League · Nations League")
+        // Only the spaces after the separators may break the line.
+        #expect(rows[1].value.components(separatedBy: " ").count == 6)
     }
 
     @Test func sourceLinksToTheRepository() throws {
