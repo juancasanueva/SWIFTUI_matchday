@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Matchday CLI (standard-library Python, no setup needed).
+ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+exec env PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/lib/matchday.py" "$@"
