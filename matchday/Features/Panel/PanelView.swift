@@ -149,7 +149,7 @@ struct PanelHeader: View {
     let location: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             // The app icon itself, so the header always matches the AppIcon set.
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
