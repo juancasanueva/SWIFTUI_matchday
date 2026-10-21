@@ -69,9 +69,12 @@ Matchday functionality natively on macOS, for personal use.
 - [x] T3 HTTP client + disk cache + tiered polling scheduler (hotness, TTLs, status ok/loading/offline/stale) with tests — delegated (2+ non-trivial files) — `feat/macos-matchday-t03-data` `47137ac` — RED (missing types) → GREEN 55 tests; parent spot check: test run TEST SUCCEEDED
   - Assess (base `main`, committed-only): medium, `slice_budget_reached` (2,646 lines) → consent granted → native review (reliability lens) **approved + acknowledged** (lineage `review-8966a2091423f10f`). Reviewed boundary advances to T3 head.
   - Advisory follow-ups (non-blocking): R3 stale errors never pruned (`MatchRepository.swift:59-67`, WARNING); R3 decode-failure path untested (`MatchRepository.swift:220-230`, SUGGESTION) → folded into T6.
-- [ ] T4 Settings & favorites store (UserDefaults), league config — delegated
-- [ ] T5 Where-to-watch (bundled broadcasters.json, ESPN aliases, spanish filter, country) with tests — delegated
-- [ ] T6 App store/view model aggregating data (following cards ordering, live elsewhere, matches by day, tables) with tests; + review follow-ups (prune stale errors, test decode-failure path) — delegated
+  - Second review pass on `main..c901708` (hook-triggered, lineage `review-1d552ad67a83c623`): approved + acknowledged; extra follow-ups R3-reentrant-refresh (WARNING) and R3-client-error-branches → folded into T6.
+- [x] T4 Settings & favorites store (UserDefaults), league config — delegated — `feat/macos-matchday-t04-settings` `74de08c` — RED compile fail → GREEN 77 tests
+- [x] T5 Where-to-watch (bundled broadcasters.json, ESPN aliases, spanish filter, country) with tests — delegated — `feat/macos-matchday-t05-watch` `da71021` — RED → GREEN
+- [x] T6 App store/view model aggregating data (following cards ordering, live elsewhere, matches by day, tables) with tests; + review follow-ups (prune stale errors, decode-failure test, coalesce overlapping refreshes, client error-branch tests) — delegated — `feat/macos-matchday-t06-store` `0670d06`, `ef53ee1`, `bc5e90e` (chmod 644 broadcasters.json) — GREEN 163 tests; parent spot check TEST SUCCEEDED
+  - Assess (base `c901708`): high `executable_mode` (755 JSON) → fixed → medium `slice_budget_reached` (2,582 lines) → consent granted → review (`review-7f3a9946a2462d6b`) **approved + acknowledged**. Boundary → `bc5e90e`.
+  - Advisory follow-ups → T7: R3-join-drops-caller-intent (`MatchRepository.swift:63-71`, WARNING); R3-overlap-test-nondeterministic (`MatchRepositoryTests.swift:211-221`, SUGGESTION).
 - [ ] T7 Menu bar label (icon, dot, pulse, live score) + panel shell, header, tab bar — delegated
 - [ ] T8 Following tab (team cards, form, countdown, watch pills, last/then, live events) — delegated
 - [ ] T9 Matches tab (filters, day sections, results, rows) — delegated
