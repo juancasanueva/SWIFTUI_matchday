@@ -5,28 +5,16 @@
 
 import SwiftUI
 
-/// Matchday lives only in the menu bar (`LSUIElement = YES`), so the single
-/// scene is a `MenuBarExtra` that opens a window-style panel.
+/// Matchday lives only in the menu bar (`LSUIElement = YES`). `AppDelegate`
+/// owns the status item and the popover with the panel.
 @main
 struct MatchdayApp: App {
-    @State private var store: MatchdayStore
-    @State private var launchAtLogin: LaunchAtLogin
-
-    init() {
-        let environment = AppEnvironment()
-        environment.start()
-        _store = State(initialValue: environment.store)
-        _launchAtLogin = State(initialValue: environment.launchAtLogin)
-    }
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra {
-            PanelView()
-                .environment(store)
-                .environment(launchAtLogin)
-        } label: {
-            MenuBarLabelContainer(store: store)
+        // An empty Settings scene is the only scene, so no window opens at launch.
+        Settings {
+            EmptyView()
         }
-        .menuBarExtraStyle(.window)
     }
 }

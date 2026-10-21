@@ -8,11 +8,11 @@
 import AppKit
 import SwiftUI
 
-/// Container: reads the store, refreshes whenever the panel opens (Panel.qml:375)
-/// and handles the keyboard (Panel.qml:377-389, see `PanelKeyboard`).
+/// Container: reads the store and handles the keyboard (Panel.qml:377-389, see
+/// `PanelKeyboard`). The popover's owner refreshes on every open (Panel.qml:375).
 struct PanelView: View {
     @Environment(MatchdayStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @Environment(PanelPresentation.self) private var presentation
     @State private var tab: PanelTab = .following
     /// Chip selections live here so they survive tab switches.
     @State private var selection = PanelSelection()
@@ -35,15 +35,16 @@ struct PanelView: View {
         .focusable()
         .focusEffectDisabled()
         .focused($hasKeyboardFocus)
-        .onAppear { hasKeyboardFocus = true }
+        .onChange(of: presentation.openCount, initial: true) {
+            hasKeyboardFocus = true
+        }
         .onKeyPress(.escape) {
-            dismiss()
+            presentation.close()
             return .handled
         }
         .onKeyPress(phases: .down) { press in
             handle(press)
         }
-        .task { await store.refreshNow() }
     }
 
     @ViewBuilder

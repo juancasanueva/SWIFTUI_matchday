@@ -76,7 +76,7 @@ Screaming, hexagonal layout with container and presentational views:
 
 ```
 matchday/
-  App/          Composition root: MatchdayApp (MenuBarExtra) and AppEnvironment
+  App/          Composition root: MatchdayApp, AppDelegate and AppEnvironment
   Domain/       Pure models (Match, Team, League, Standings, AppSettings) and ports
   Application/  MatchdayStore (@Observable), MatchRepository (fetching, cache,
                 tiered refresh), derivations for each tab, notification planner
