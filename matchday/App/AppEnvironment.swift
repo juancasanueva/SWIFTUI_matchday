@@ -19,7 +19,10 @@ final class AppEnvironment {
         let calendar = Calendar.current
         let repository = MatchRepository(client: ESPNClient(transport: URLSessionTransport(), calendar: calendar),
                                          cache: HTTPCache(), calendar: calendar)
-        let sender = Self.isHostingTests ? nil : UserNotificationSender()
+        let crests = CrestLoader.shared.cache
+        let sender = Self.isHostingTests ? nil : UserNotificationSender(crestFile: { team in
+            await crests.cachedFile(kind: .team, id: team.id, dark: false)
+        })
         notificationSender = sender
         store = MatchdayStore(
             repository: repository,

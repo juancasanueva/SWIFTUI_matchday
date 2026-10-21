@@ -8,17 +8,17 @@
 import AppKit
 import SwiftUI
 
-enum PanelTab: String, CaseIterable, Identifiable {
-    case following, matches, tables, teams
-
-    var id: Self { self }
-    var title: String { rawValue.capitalized }
-}
-
-/// Container: reads the store and refreshes whenever the panel opens (Panel.qml:375).
+/// Container: reads the store, refreshes whenever the panel opens (Panel.qml:375)
+/// and handles the keyboard (Panel.qml:377-389, see `PanelKeyboard`).
 struct PanelView: View {
     @Environment(MatchdayStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
     @State private var tab: PanelTab = .following
+    /// Chip selections live here so they survive tab switches.
+    @State private var selection = PanelSelection()
+    @State private var scrollPosition = ScrollPosition(edge: .top)
+    @State private var scrollMetrics = PanelScrollMetrics()
+    @FocusState private var hasKeyboardFocus: Bool
 
     var body: some View {
         PanelShell(
@@ -26,9 +26,22 @@ struct PanelView: View {
             location: store.locationLabel,
             isRefreshing: store.isRefreshing,
             tab: $tab,
+            scrollPosition: $scrollPosition,
+            onScroll: { scrollMetrics = $0 },
             onRefresh: refresh
         ) {
             content
+        }
+        .focusable()
+        .focusEffectDisabled()
+        .focused($hasKeyboardFocus)
+        .onAppear { hasKeyboardFocus = true }
+        .onKeyPress(.escape) {
+            dismiss()
+            return .handled
+        }
+        .onKeyPress(phases: .down) { press in
+            handle(press)
         }
         .task { await store.refreshNow() }
     }
@@ -39,17 +52,46 @@ struct PanelView: View {
         case .following:
             FollowingTab { tab = .teams }
         case .matches:
-            MatchesTab()
+            MatchesTab(filter: $selection.matchFilter)
         case .tables:
-            TablesTab()
+            TablesTab(selection: $selection.tableLeague)
         case .teams:
-            TeamsTab()
+            TeamsTab(selection: $selection.teamsLeague)
         }
+    }
+
+    private func handle(_ press: KeyPress) -> KeyPress.Result {
+        // Leave ⌘Q and other shortcuts to the system.
+        guard press.modifiers.isDisjoint(with: [.command, .control, .option]),
+              let character = press.characters.first,
+              let command = PanelCommand(character: character)
+        else { return .ignored }
+        switch command {
+        case .selectTab(let newTab):
+            tab = newTab
+        case .cycleFilter(let step):
+            selection.cycleFilter(on: tab, by: step, settings: store.settings)
+        case .scroll(let direction):
+            let offset = PanelSelection.scrollOffset(from: scrollMetrics.offset, by: direction,
+                                                     contentHeight: scrollMetrics.contentHeight,
+                                                     viewportHeight: scrollMetrics.viewportHeight)
+            withAnimation(.snappy(duration: 0.15)) { scrollPosition.scrollTo(y: offset) }
+        case .refresh:
+            refresh()
+        }
+        return .handled
     }
 
     private func refresh() {
         Task { await store.refreshNow() }
     }
+}
+
+/// Where the panel's scroll view is, for j/k.
+struct PanelScrollMetrics: Equatable {
+    var offset: CGFloat = 0
+    var contentHeight: CGFloat = 0
+    var viewportHeight: CGFloat = 0
 }
 
 /// Presentational frame of the panel around the selected tab's content.
@@ -58,6 +100,8 @@ struct PanelShell<Content: View>: View {
     let location: String
     let isRefreshing: Bool
     @Binding var tab: PanelTab
+    @Binding var scrollPosition: ScrollPosition
+    var onScroll: (PanelScrollMetrics) -> Void = { _ in }
     let onRefresh: () -> Void
     @ViewBuilder let content: Content
 
@@ -76,6 +120,13 @@ struct PanelShell<Content: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .id(tab)
+            .scrollPosition($scrollPosition)
+            .onScrollGeometryChange(for: PanelScrollMetrics.self) { geometry in
+                PanelScrollMetrics(offset: geometry.contentOffset.y, contentHeight: geometry.contentSize.height,
+                                   viewportHeight: geometry.containerSize.height)
+            } action: { _, metrics in
+                onScroll(metrics)
+            }
             .scrollIndicators(.automatic)
             Rectangle()
                 .fill(Theme.faint)
@@ -181,8 +232,9 @@ struct PanelFooter: View {
 
 #Preview {
     @Previewable @State var tab = PanelTab.following
+    @Previewable @State var scroll = ScrollPosition(edge: .top)
     PanelShell(summary: "NEXT RMA V RBL · TODAY 9:00 PM", location: "Madrid, Spain",
-               isRefreshing: false, tab: $tab, onRefresh: {}) {
+               isRefreshing: false, tab: $tab, scrollPosition: $scroll, onRefresh: {}) {
         Text("\(tab.title) content")
             .foregroundStyle(Theme.dim)
     }

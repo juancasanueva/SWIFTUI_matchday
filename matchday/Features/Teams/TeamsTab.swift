@@ -8,10 +8,10 @@
 
 import SwiftUI
 
-/// Container: owns the league selection and reads the store.
+/// Container: reads the store; the panel owns the league selection (h/l cycle it).
 struct TeamsTab: View {
     @Environment(MatchdayStore.self) private var store
-    @State private var selection: String?
+    @Binding var selection: String?
 
     var body: some View {
         let settings = store.settings

@@ -8,10 +8,10 @@
 
 import SwiftUI
 
-/// Container: owns the filter and reads the store.
+/// Container: reads the store; the panel owns the filter (h/l cycle it).
 struct MatchesTab: View {
     @Environment(MatchdayStore.self) private var store
-    @State private var filter: MatchFilter = .all
+    @Binding var filter: MatchFilter
 
     var body: some View {
         let settings = store.settings
