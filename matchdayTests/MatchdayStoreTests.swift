@@ -158,6 +158,14 @@ struct MatchdayStoreTests {
         #expect(store.footnote == "Where to watch shows 2026-27 rights holders for United Kingdom.")
     }
 
+    @Test func locationLabelNamesTheWatchCountry() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore())
+        // Automatic: the system region (the UTC test time zone has no city).
+        #expect(store.locationLabel == "United States")
+        store.updateSettings { $0.country = "ES" }
+        #expect(store.locationLabel == "Spain")
+    }
+
     @Test func refreshLoopRunsUntilStopped() async throws {
         var saved = AppSettings()
         saved.setLeagues(["eng.1"])
