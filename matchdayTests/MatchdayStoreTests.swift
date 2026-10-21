@@ -166,6 +166,18 @@ struct MatchdayStoreTests {
         #expect(store.locationLabel == "Spain")
     }
 
+    @Test func liveElsewhereRowsShowOtherLiveMatches() async throws {
+        var saved = AppSettings()
+        saved.setLeagues(["eng.1"])
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(saved))
+        await store.refresh()
+        let rows = store.liveElsewhereRows
+        #expect(rows.map(\.id) == store.liveElsewhere.map(\.id))
+        #expect(!rows.isEmpty)
+        #expect(rows.allSatisfy { $0.isLive && !$0.isFollowed && $0.showLeague })
+        #expect(rows.first?.status == "HT")
+    }
+
     @Test func refreshLoopRunsUntilStopped() async throws {
         var saved = AppSettings()
         saved.setLeagues(["eng.1"])

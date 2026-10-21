@@ -36,7 +36,9 @@ struct PanelView: View {
     @ViewBuilder
     private var content: some View {
         switch tab {
-        case .following, .matches, .tables, .teams:
+        case .following:
+            FollowingTab { tab = .teams }
+        case .matches, .tables, .teams:
             ComingSoonView(title: tab.title)
         }
     }
