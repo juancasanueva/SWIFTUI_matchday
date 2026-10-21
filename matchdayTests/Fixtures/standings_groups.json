@@ -1,0 +1,35 @@
+{
+  "name": "UEFA Nations League",
+  "children": [
+    {
+      "name": "Group A1",
+      "standings": {
+        "entries": [
+          {
+            "team": { "id": "164", "displayName": "Spain", "abbreviation": "ESP" },
+            "stats": [
+              { "name": "rank", "displayValue": "1" },
+              { "name": "gamesPlayed", "displayValue": "2" },
+              { "name": "points", "displayValue": "6" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Group A2",
+      "standings": {
+        "entries": [
+          {
+            "team": { "id": "478", "displayName": "France", "shortDisplayName": "France", "abbreviation": "FRA" },
+            "stats": [
+              { "name": "rank", "displayValue": "1" },
+              { "name": "gamesPlayed", "displayValue": "2" },
+              { "name": "points", "displayValue": "4" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
