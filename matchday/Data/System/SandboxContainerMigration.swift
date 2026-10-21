@@ -16,9 +16,11 @@ nonisolated struct SandboxContainerMigration: @unchecked Sendable {
         case noContainer
         case alreadyMigrated
         case migrated
+        /// A step failed for a reason that may go away; the next launch retries.
+        case incomplete
     }
 
-    /// Set in the destination defaults once the container has been read.
+    /// Set in the destination defaults once every step has finished.
     static let markerKey = "matchday.migratedFromSandboxContainer"
     /// The UserDefaults keys Matchday owns; AppKit's window state stays behind.
     static let ownedKeys = [UserDefaultsSettingsStore.key]
@@ -49,50 +51,67 @@ nonisolated struct SandboxContainerMigration: @unchecked Sendable {
     }
 
     /// Copies owned preferences and files that are missing here. Existing data
-    /// always wins, so running it again is harmless; failures are only logged.
+    /// always wins, so running it again is harmless. The marker is set only when
+    /// every step finished or had nothing it could ever do; a step that failed
+    /// for a reason that may go away leaves it unset, so the next launch retries.
     @discardableResult
     func run() -> Outcome {
         guard !defaults.bool(forKey: Self.markerKey) else { return .alreadyMigrated }
         guard fileManager.fileExists(atPath: containerData.path(percentEncoded: false)) else { return .noContainer }
 
-        migratePreferences()
+        var complete = migratePreferences()
         for file in Self.ownedFiles {
-            migrateFile(file)
+            complete = migrateFile(file) && complete
+        }
+        guard complete else {
+            Logger.app.error("Sandbox container migration incomplete; it will be retried next launch")
+            return .incomplete
         }
         defaults.set(true, forKey: Self.markerKey)
         Logger.app.info("Migrated settings from the sandbox container")
         return .migrated
     }
 
-    private func migratePreferences() {
+    /// `false` only when the plist could not be read; a plist that reads but
+    /// does not parse is corrupt, will not fix itself, and counts as done.
+    private func migratePreferences() -> Bool {
         let url = containerData.appending(path: "Library/Preferences/\(bundleIdentifier).plist")
-        guard fileManager.fileExists(atPath: url.path(percentEncoded: false)) else { return }
+        guard fileManager.fileExists(atPath: url.path(percentEncoded: false)) else { return true }
+        let data: Data
         do {
-            let data = try Data(contentsOf: url)
-            guard let values = try PropertyListSerialization.propertyList(from: data, format: nil)
-                as? [String: Any] else { return }
-            for key in Self.ownedKeys where defaults.object(forKey: key) == nil {
-                if let value = values[key] {
-                    defaults.set(value, forKey: key)
-                }
-            }
+            data = try Data(contentsOf: url)
         } catch {
             Logger.app.error("Could not read the sandbox preferences: \(error.localizedDescription)")
+            return false
         }
+        guard let values = try? PropertyListSerialization.propertyList(from: data, format: nil)
+            as? [String: Any] else {
+            Logger.app.error("The sandbox preferences are not a property list; skipping them")
+            return true
+        }
+        for key in Self.ownedKeys where defaults.object(forKey: key) == nil {
+            if let value = values[key] {
+                defaults.set(value, forKey: key)
+            }
+        }
+        return true
     }
 
-    private func migrateFile(_ relativePath: String) {
+    /// `false` when the copy failed; nothing to copy, or data already here, is done.
+    private func migrateFile(_ relativePath: String) -> Bool {
         let source = containerData.appending(path: "Library/Application Support/\(relativePath)")
         let destination = applicationSupport.appending(path: relativePath)
         guard fileManager.fileExists(atPath: source.path(percentEncoded: false)),
               !fileManager.fileExists(atPath: destination.path(percentEncoded: false))
-        else { return }
+        else { return true }
         do {
             try fileManager.createDirectory(at: destination.deletingLastPathComponent(),
                                             withIntermediateDirectories: true)
             try fileManager.copyItem(at: source, to: destination)
+            return true
         } catch {
             Logger.app.error("Could not copy \(relativePath) from the sandbox: \(error.localizedDescription)")
+            return false
         }
     }
 }

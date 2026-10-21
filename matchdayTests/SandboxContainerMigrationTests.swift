@@ -113,6 +113,23 @@ struct SandboxContainerMigrationTests {
         #expect(sandbox.defaults.data(forKey: UserDefaultsSettingsStore.key) == settings)
     }
 
+    /// A copy that fails for a reason that can go away (disk full, a locked
+    /// volume) leaves the marker unset, so the next launch tries again.
+    @Test func aFailedCopyIsRetriedOnTheNextLaunch() throws {
+        let sandbox = Sandbox()
+        try sandbox.seedContainer(preferences: [UserDefaultsSettingsStore.key: settings], notified: "{}")
+        var failing = sandbox.migration
+        failing.fileManager = FailingCopyFileManager()
+
+        #expect(failing.run() == .incomplete)
+        #expect(!sandbox.defaults.bool(forKey: SandboxContainerMigration.markerKey))
+        #expect(!FileManager.default.fileExists(atPath: sandbox.notified.path(percentEncoded: false)))
+
+        #expect(sandbox.migration.run() == .migrated)
+        #expect(try String(contentsOf: sandbox.notified, encoding: .utf8) == "{}")
+        #expect(sandbox.defaults.bool(forKey: SandboxContainerMigration.markerKey))
+    }
+
     @Test func unreadablePreferencesStillMarkTheMigrationDone() throws {
         let sandbox = Sandbox()
         try sandbox.write("not a plist", to: sandbox.containerPreferences)
@@ -120,5 +137,12 @@ struct SandboxContainerMigrationTests {
         #expect(sandbox.migration.run() == .migrated)
         #expect(sandbox.defaults.data(forKey: UserDefaultsSettingsStore.key) == nil)
         #expect(sandbox.defaults.bool(forKey: SandboxContainerMigration.markerKey))
+    }
+}
+
+/// A file manager whose copies always fail, as a full or locked disk would.
+nonisolated private final class FailingCopyFileManager: FileManager, @unchecked Sendable {
+    override func copyItem(at srcURL: URL, to dstURL: URL) throws {
+        throw CocoaError(.fileWriteOutOfSpace)
     }
 }
