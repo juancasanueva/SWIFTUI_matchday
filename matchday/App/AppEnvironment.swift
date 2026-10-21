@@ -10,6 +10,7 @@ import Foundation
 @MainActor
 final class AppEnvironment {
     let store: MatchdayStore
+    let launchAtLogin = LaunchAtLogin(service: MainAppLoginItem())
 
     init(defaults: UserDefaults = .standard) {
         let calendar = Calendar.current

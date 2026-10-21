@@ -43,6 +43,22 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
         leagues = known.isEmpty ? League.all.map(\.id) : known
     }
 
+    func isLeagueEnabled(_ id: String) -> Bool {
+        leagues.contains(id)
+    }
+
+    /// Turns one catalog league on or off, keeping catalog order. The last enabled
+    /// league stays on. Returns whether anything changed.
+    @discardableResult
+    mutating func setLeague(_ id: String, enabled: Bool) -> Bool {
+        guard League.with(id: id) != nil, isLeagueEnabled(id) != enabled else { return false }
+        if !enabled && leagues.count == 1 { return false }
+        var ids = Set(leagues)
+        if enabled { ids.insert(id) } else { ids.remove(id) }
+        leagues = League.all.map(\.id).filter(ids.contains)
+        return true
+    }
+
     func isFollowing(leagueID: String, teamID: String) -> Bool {
         favorites.contains { $0.leagueID == leagueID && $0.teamID == teamID }
     }

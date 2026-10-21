@@ -44,6 +44,31 @@ struct AppSettingsTests {
         #expect(settings.leagues == League.all.map(\.id))
     }
 
+    @Test func enablingAndDisablingLeaguesKeepsCatalogOrder() {
+        var settings = AppSettings()
+        settings.setLeagues(["eng.1", "esp.1"])
+        let enabledItaly = settings.setLeague("ita.1", enabled: true)
+        #expect(enabledItaly)
+        #expect(settings.leagues == ["esp.1", "ita.1", "eng.1"])
+        #expect(settings.isLeagueEnabled("ita.1"))
+
+        let disabledSpain = settings.setLeague("esp.1", enabled: false)
+        #expect(disabledSpain)
+        #expect(settings.leagues == ["ita.1", "eng.1"])
+        #expect(!settings.isLeagueEnabled("esp.1"))
+    }
+
+    @Test func theLastEnabledLeagueStaysOnAndUnknownLeaguesAreIgnored() {
+        var settings = AppSettings()
+        settings.setLeagues(["usa.1"])
+        let disabledLast = settings.setLeague("usa.1", enabled: false)
+        #expect(!disabledLast)
+        #expect(settings.leagues == ["usa.1"])
+        let enabledUnknown = settings.setLeague("nope", enabled: true)
+        #expect(!enabledUnknown)
+        #expect(settings.leagues == ["usa.1"])
+    }
+
     @Test func toggleFollowAddsThenRemovesByLeagueAndID() {
         var settings = AppSettings()
         settings.toggleFollow(arsenal)
