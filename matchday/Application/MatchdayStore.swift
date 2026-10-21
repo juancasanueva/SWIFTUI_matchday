@@ -178,9 +178,14 @@ final class MatchdayStore {
     var countryOptions: [CountryOption] {
         let automatic = CountryOption(code: AppSettings.automaticCountry,
                                       label: "Automatic — \(countryResolver.automaticLabel)")
+        // Sorted in the resolver's locale (the one naming the countries), not the process locale.
+        let locale = countryResolver.locale
         var options = whereToWatch.catalog.countryChoices
             .map { CountryOption(code: $0.code, label: countryResolver.countryName(for: $0.code)) }
-            .sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
+            .sorted {
+                $0.label.compare($1.label, options: [.caseInsensitive, .numeric, .widthInsensitive],
+                                 locale: locale) == .orderedAscending
+            }
         let selected = selectedCountry
         if selected != AppSettings.automaticCountry && !options.contains(where: { $0.code == selected }) {
             options.append(CountryOption(code: selected, label: countryResolver.countryName(for: selected)))

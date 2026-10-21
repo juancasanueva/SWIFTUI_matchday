@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 
 @MainActor
 final class AppEnvironment {
@@ -43,8 +44,15 @@ final class AppEnvironment {
 
     /// The bundled broadcasters, or an empty catalog (no where-to-watch) if it is unreadable.
     private static func loadCatalog() -> BroadcasterCatalog {
-        if let catalog = try? BroadcasterCatalog.bundled() { return catalog }
-        // Every key is optional, so an empty object decodes to an empty catalog.
-        return try! BroadcasterCatalog.decode(Data("{}".utf8))
+        do {
+            return try BroadcasterCatalog.bundled()
+        } catch {
+            Logger.app.error("Bundled broadcasters unreadable: \(error.localizedDescription)")
+            return .empty
+        }
     }
+}
+
+nonisolated extension Logger {
+    static let app = Logger(subsystem: "com.juancasanueva.matchday", category: "app")
 }

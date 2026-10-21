@@ -98,6 +98,19 @@ nonisolated struct BroadcasterCatalog: Decodable, Sendable {
         case season, services, countries, everywhere, espnAliases
     }
 
+    /// No services or rights: where-to-watch falls back to ESPN's own listings.
+    static let empty = BroadcasterCatalog(season: "", services: [:], countries: [:], everywhere: [:],
+                                          espnAliases: [:])
+
+    init(season: String, services: [String: Service], countries: [String: Country],
+         everywhere: [String: Rights], espnAliases: [String: String]) {
+        self.season = season
+        self.services = services
+        self.countries = countries
+        self.everywhere = everywhere
+        self.espnAliases = espnAliases
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         season = try container.decodeIfPresent(String.self, forKey: .season) ?? ""

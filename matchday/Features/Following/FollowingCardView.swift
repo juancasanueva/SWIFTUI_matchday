@@ -15,7 +15,7 @@ struct FollowingCardView: View {
     @Environment(\.openURL) private var openURL
 
     private var isLive: Bool { card.live != nil }
-    private var tint: Color { Color(hex: card.colorHex) ?? Theme.accent }
+    private var tint: Color { Theme.readable(hex: card.colorHex, fallback: .accent) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

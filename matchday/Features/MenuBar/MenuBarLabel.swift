@@ -27,6 +27,8 @@ struct MenuBarLabelContainer: View {
 struct MenuBarLabel: View {
     let bar: BarState
 
+    /// Observed, so turning Reduce Motion on stops the pulse at once.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulseDimmed = false
 
     /// Live text replaces the dot, as in the original bar.
@@ -36,7 +38,7 @@ struct MenuBarLabel: View {
     }
 
     private var pulses: Bool {
-        dot == .live && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        dot == .live && !reduceMotion
     }
 
     var body: some View {
@@ -49,7 +51,9 @@ struct MenuBarLabel: View {
                     .monospacedDigit()
             }
         }
-        .help(bar.tooltip)
+        .onChange(of: bar.tooltip, initial: true) { _, tooltip in
+            StatusItemTooltip.set(tooltip)
+        }
         .task(id: pulses) {
             pulseDimmed = false
             guard pulses else { return }
@@ -64,6 +68,29 @@ struct MenuBarLabel: View {
         if bar.isLive { return "Matchday, a followed team is live" }
         if bar.showDot { return "Matchday, a followed team plays soon" }
         return "Matchday"
+    }
+}
+
+/// `.help` on a `MenuBarExtra` label is ignored (the label is flattened into
+/// the status item), so the tooltip is set on the status item's button.
+/// SwiftUI does not expose that `NSStatusItem`; its button is found in the
+/// app's status bar window instead. If AppKit ever hosts it differently the
+/// lookup finds nothing and the item simply has no tooltip.
+enum StatusItemTooltip {
+    static func set(_ text: String) {
+        for window in NSApp.windows where window.className.contains("StatusBarWindow") {
+            if let button = window.contentView.flatMap(statusButton(in:)) {
+                button.toolTip = text
+            }
+        }
+    }
+
+    private static func statusButton(in view: NSView) -> NSStatusBarButton? {
+        if let button = view as? NSStatusBarButton { return button }
+        for subview in view.subviews {
+            if let button = statusButton(in: subview) { return button }
+        }
+        return nil
     }
 }
 
