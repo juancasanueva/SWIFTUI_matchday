@@ -38,6 +38,7 @@ final class MatchdayStore {
     @ObservationIgnored private let locale: Locale
     @ObservationIgnored private let clock: @Sendable () -> Date
     @ObservationIgnored private let tick: Duration
+    @ObservationIgnored private let notifier: MatchNotifier?
     @ObservationIgnored private var loop: Task<Void, Never>?
 
     init(
@@ -48,7 +49,8 @@ final class MatchdayStore {
         calendar: Calendar = .current,
         locale: Locale = .current,
         clock: @escaping @Sendable () -> Date = { Date() },
-        tick: Duration = MatchdayStore.defaultTick
+        tick: Duration = MatchdayStore.defaultTick,
+        notifier: MatchNotifier? = nil
     ) {
         self.repository = repository
         self.settingsStore = settingsStore
@@ -58,6 +60,7 @@ final class MatchdayStore {
         self.locale = locale
         self.clock = clock
         self.tick = tick
+        self.notifier = notifier
         self.settings = settingsStore.load()
         self.now = clock()
     }
@@ -94,6 +97,7 @@ final class MatchdayStore {
                                                  favorites: current.favorites)
         snapshot = result
         now = clock()
+        notifier?.process(matches: result.matches, settings: settings, now: now, watch: watchOptions(for:))
     }
 
     /// The Refresh command: expires every cached response, then refreshes.
@@ -143,9 +147,10 @@ final class MatchdayStore {
         settings.leagues != [id]
     }
 
-    /// Sends a sample notification so the user can check the alert style.
+    /// Sends a sample notification so the user can check the alert style
+    /// (and grant permission the first time).
     func sendTestNotification() {
-        // T12: notifications are not implemented yet.
+        notifier?.sendTest()
     }
 
     // MARK: Derived state

@@ -61,7 +61,7 @@ struct MatchdayStoreTests {
     }
 
     private func makeStore(_ transport: FakeTransport, settings: InMemorySettingsStore,
-                           tick: Duration = .seconds(5)) throws -> MatchdayStore {
+                           tick: Duration = .seconds(5), notifier: MatchNotifier? = nil) throws -> MatchdayStore {
         let repository = MatchRepository(client: ESPNClient(transport: transport, calendar: utcCalendar()),
                                          cache: HTTPCache(directory: temporaryDirectory()),
                                          calendar: utcCalendar())
@@ -75,7 +75,8 @@ struct MatchdayStoreTests {
             calendar: utcCalendar(),
             locale: Locale(identifier: "en_US"),
             clock: { now },
-            tick: tick
+            tick: tick,
+            notifier: notifier
         )
     }
 
@@ -217,6 +218,31 @@ struct MatchdayStoreTests {
         #expect(!rows.isEmpty)
         #expect(rows.allSatisfy { $0.isLive && !$0.isFollowed && $0.showLeague })
         #expect(rows.first?.status == "HT")
+    }
+
+    @Test func refreshNotifiesFollowedTeamsOnce() async throws {
+        // Bournemouth beat Sunderland 2–1 at 13:00 UTC, three hours before `now`.
+        let bournemouth = Team(id: "349", leagueID: "eng.1", name: "AFC Bournemouth", shortName: "Bournemouth",
+                               abbreviation: "BOU")
+        let saved = Make.settings(following: [bournemouth], leagues: ["eng.1"])
+        let sender = RecordingSender()
+        let memory = InMemoryNotificationMemoryStore()
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(saved),
+                                  notifier: MatchNotifier(sender: sender, memoryStore: memory))
+        await store.refresh()
+        await store.refresh()
+        #expect(sender.notifications.map(\.title) == ["Full time · Win for Bournemouth"])
+        #expect(sender.notifications.first?.body == "Bournemouth 2–1 Sunderland")
+        #expect(sender.notifications.first?.url?.absoluteString.contains("401879263") == true)
+        #expect(memory.load().final.keys.contains("401879263"))
+    }
+
+    @Test func sendTestNotificationUsesTheNotifier() throws {
+        let sender = RecordingSender()
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
+                                  notifier: MatchNotifier(sender: sender, memoryStore: InMemoryNotificationMemoryStore()))
+        store.sendTestNotification()
+        #expect(sender.notifications == [.test])
     }
 
     @Test func refreshLoopRunsUntilStopped() async throws {
