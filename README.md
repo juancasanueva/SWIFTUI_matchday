@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/icon.png" alt="Matchday app icon" width="128" height="128">
+</p>
+
 # Matchday
 
 A macOS menu bar app for following soccer teams: fixtures, live scores,
@@ -7,6 +11,10 @@ port of the Omarchy "Matchday" plugin.
 Matchday lives only in the menu bar (no Dock icon, no main window). The ball
 icon shows a dot when a followed team plays within 12 hours (red while live),
 and optionally the live score next to it.
+
+<p align="center">
+  <img src="docs/images/following.png" alt="The Matchday panel on the Following tab, with cards for Real Madrid, Atlético Madrid and Barcelona" width="566">
+</p>
 
 ## Features
 
@@ -155,3 +163,7 @@ Swift Testing suites in `matchdayTests/`, with ESPN JSON fixtures in
   downloads), panel keyboard commands, and color contrast fallbacks.
 - About content (version and build from Info.plist, rows, links) and the
   status item context menu.
+
+## License
+
+Matchday is released under the [MIT License](LICENSE.md).
