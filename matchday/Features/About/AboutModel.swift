@@ -40,7 +40,8 @@ nonisolated enum AboutModel {
         AboutRow(label: "Leagues",
                  // Non-breaking spaces keep each league name whole and its separator on
                  // the same line, so the row only wraps between leagues.
-                 value: ["LaLiga", "Serie A", "Premier League", "MLS", "Champions League", "Nations League"]
+                 value: ["LaLiga", "Serie A", "Premier League", "Bundesliga", "Ligue 1", "Liga Portugal",
+                         "MLS", "Champions League", "Nations League"]
                      .map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") }
                      .joined(separator: "\u{00A0}· ")),
         AboutRow(label: "License", value: "MIT",

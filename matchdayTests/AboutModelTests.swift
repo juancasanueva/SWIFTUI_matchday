@@ -35,9 +35,9 @@ struct AboutModelTests {
         #expect(rows[2].value == "MIT")
         #expect(rows[0].value == "ESPN public site API (unofficial)")
         let leagues = rows[1].value.replacingOccurrences(of: "\u{00A0}", with: " ")
-        #expect(leagues == "LaLiga · Serie A · Premier League · MLS · Champions League · Nations League")
+        #expect(leagues == "LaLiga · Serie A · Premier League · Bundesliga · Ligue 1 · Liga Portugal · MLS · Champions League · Nations League")
         // Only the spaces after the separators may break the line.
-        #expect(rows[1].value.components(separatedBy: " ").count == 6)
+        #expect(rows[1].value.components(separatedBy: " ").count == 9)
     }
 
     @Test func sourceLinksToTheRepository() throws {

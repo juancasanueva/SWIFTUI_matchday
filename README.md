@@ -40,8 +40,8 @@ and optionally the live score next to it.
 - **Keyboard** in the panel: `1`–`4` switch tabs, `h`/`l` cycle the league or
   filter chips, `j`/`k` scroll, `r` refreshes, `Esc` closes the panel.
 
-Leagues: LaLiga, Serie A, Premier League, MLS, UEFA Champions League and UEFA
-Nations League.
+Leagues: LaLiga, Serie A, Premier League, Bundesliga, Ligue 1, Liga Portugal,
+MLS, UEFA Champions League and UEFA Nations League.
 
 ## Data source
 
