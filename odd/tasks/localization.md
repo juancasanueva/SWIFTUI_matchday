@@ -45,6 +45,10 @@ and most visible text is built as `String` in `matchday/Application/` derivation
       `LocalizedStringKey`/resources, derivations/notifications/menu/tooltips resolve
       through the language bundle, dates follow the selected locale, fix the
       "Click a %@" sentence. English tests stay green.
+      Also (accepted T1 review advisories): retitle an open About window when the
+      language changes; fall back to the development language (`en`) instead of the
+      system-resolved base bundle when a language has no `.lproj`; remove the temp
+      bundles `AppLocalizationTests` creates.
 - [ ] T3 Translate the catalog into the 8 languages; add catalog tests (every key
       translated in every language, matching format arguments, `.lproj` present);
       README mention.
@@ -61,7 +65,7 @@ and most visible text is built as `String` in `matchday/Application/` derivation
 | Task | Route | Evidence |
 |---|---|---|
 | T0 | inline (mechanical commit) | 817a119 |
-| T1 | delegated writer (2+ non-trivial files) | 19 new test functions; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED; Release BUILD SUCCEEDED; ~600 changed lines (new files + tests, not split) |
+| T1 | delegated writer (2+ non-trivial files) | 677c6bf; 19 new test functions; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED (parent spot check re-ran: SUCCEEDED); Release BUILD SUCCEEDED; ~600 changed lines (new files + tests, not split). Review: medium, granted, approved + acknowledged (review-fa8268616a4ce637); advisories folded into T2 |
 
 ## Next step
 
