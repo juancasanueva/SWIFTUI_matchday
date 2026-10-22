@@ -92,7 +92,7 @@ struct AppSettingsTests {
 
         let migrated = settings.migrateNewLeagues()
         #expect(migrated)
-        #expect(settings.leagues == ["esp.1", "eng.1", "uefa.champions", "uefa.nations"])
+        #expect(settings.leagues == ["esp.1", "eng.1", "ger.1", "uefa.champions", "uefa.nations"])
         #expect(settings.leaguesSeen == League.all.map(\.id))
 
         // Turning a new league off afterwards sticks.
@@ -108,7 +108,7 @@ struct AppSettingsTests {
         settings.setLeagues(["ita.1"])
         let migrated = settings.migrateNewLeagues()
         #expect(migrated)
-        #expect(settings.leagues == ["ita.1", "uefa.nations"])
+        #expect(settings.leagues == ["ita.1", "ger.1", "uefa.nations"])
     }
 
     @Test func decodingFillsMissingKeysWithDefaults() throws {
@@ -201,7 +201,7 @@ struct UserDefaultsSettingsStoreTests {
         defaults.set(Data(legacy.utf8), forKey: UserDefaultsSettingsStore.key)
 
         let loaded = UserDefaultsSettingsStore(defaults: defaults).load()
-        #expect(loaded.leagues == ["esp.1", "uefa.champions", "uefa.nations"])
+        #expect(loaded.leagues == ["esp.1", "ger.1", "uefa.champions", "uefa.nations"])
         let raw = try #require(defaults.data(forKey: UserDefaultsSettingsStore.key))
         let persisted = try JSONDecoder().decode(AppSettings.self, from: raw)
         #expect(persisted.leaguesSeen == League.all.map(\.id))

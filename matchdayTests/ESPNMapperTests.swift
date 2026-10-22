@@ -198,7 +198,7 @@ struct ESPNTeamsMappingTests {
 @Suite("Domain catalog")
 struct DomainCatalogTests {
     @Test func leagueCatalogMatchesOriginal() {
-        #expect(League.all.map(\.id) == ["esp.1", "ita.1", "eng.1", "usa.1", "uefa.champions", "uefa.nations"])
+        #expect(League.all.map(\.id) == ["esp.1", "ita.1", "eng.1", "ger.1", "usa.1", "uefa.champions", "uefa.nations"])
         #expect(League.all.filter(\.isNational).map(\.id) == ["uefa.nations"])
         #expect(League.with(id: "eng.1")?.short == "Premier")
         #expect(League.with(id: "nope") == nil)

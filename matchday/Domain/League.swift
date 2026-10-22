@@ -40,6 +40,8 @@ nonisolated extension League {
                                colorHex: "#1aa0e8", logoID: "12")
     static let premierLeague = League(id: "eng.1", name: "Premier League", short: "Premier",
                                       country: "England", colorHex: "#a26bfa", logoID: "23")
+    static let bundesliga = League(id: "ger.1", name: "Bundesliga", short: "Bundesliga",
+                                   country: "Germany", colorHex: "#e2231a", logoID: "10")
     static let mls = League(id: "usa.1", name: "MLS", short: "MLS", country: "USA & Canada",
                             colorHex: "#36c46f", logoID: "19")
     static let championsLeague = League(id: "uefa.champions", name: "UEFA Champions League", short: "UCL",
@@ -48,7 +50,7 @@ nonisolated extension League {
                                       country: "Europe", colorHex: "#f2b705", logoID: "2395", isNational: true)
 
     /// Every supported league, in display order.
-    static let all: [League] = [laLiga, serieA, premierLeague, mls, championsLeague, nationsLeague]
+    static let all: [League] = [laLiga, serieA, premierLeague, bundesliga, mls, championsLeague, nationsLeague]
 
     static func with(id: String) -> League? {
         all.first { $0.id == id }
