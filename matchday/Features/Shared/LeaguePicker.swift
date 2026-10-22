@@ -2,7 +2,7 @@
 //  LeaguePicker.swift
 //  matchday
 //
-//  One chip per enabled league, scrolling sideways (`ButtonGroup` over
+//  One chip per enabled league, wrapping onto new lines (`ButtonGroup` over
 //  `leagueOptions` on the Tables and Teams tabs).
 //
 
@@ -13,18 +13,15 @@ struct LeaguePicker: View {
     let leagues: [League]
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 6) {
-                ForEach(leagues) { league in
-                    Chip(title: league.short, isSelected: selection == league.id, size: .small) {
-                        selection = league.id
-                    }
-                    .help(league.name)
+        FlowLayout(spacing: 6) {
+            ForEach(leagues) { league in
+                Chip(title: league.short, isSelected: selection == league.id, size: .small) {
+                    selection = league.id
                 }
+                .help(league.name)
             }
-            .padding(.vertical, 1)
         }
-        .scrollIndicators(.never)
+        .padding(.vertical, 1)
     }
 }
 

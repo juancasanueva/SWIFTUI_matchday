@@ -71,28 +71,25 @@ struct MatchesList: View {
     }
 }
 
-/// All / ★ Mine / one chip per enabled league, scrolling sideways.
+/// All / ★ Mine / one chip per enabled league, wrapping onto new lines.
 struct MatchFilterBar: View {
     @Binding var filter: MatchFilter
     let leagues: [League]
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 6) {
-                Chip(title: "All", isSelected: filter == .all, size: .small) { filter = .all }
-                Chip(title: "Mine", systemImage: "star.fill", isSelected: filter == .mine, size: .small) {
-                    filter = .mine
-                }
-                ForEach(leagues) { league in
-                    Chip(title: league.short, isSelected: filter == .league(league.id), size: .small) {
-                        filter = .league(league.id)
-                    }
-                    .help(league.name)
-                }
+        FlowLayout(spacing: 6) {
+            Chip(title: "All", isSelected: filter == .all, size: .small) { filter = .all }
+            Chip(title: "Mine", systemImage: "star.fill", isSelected: filter == .mine, size: .small) {
+                filter = .mine
             }
-            .padding(.vertical, 1)
+            ForEach(leagues) { league in
+                Chip(title: league.short, isSelected: filter == .league(league.id), size: .small) {
+                    filter = .league(league.id)
+                }
+                .help(league.name)
+            }
         }
-        .scrollIndicators(.never)
+        .padding(.vertical, 1)
     }
 }
 
