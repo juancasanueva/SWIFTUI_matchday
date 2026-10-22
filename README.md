@@ -37,11 +37,17 @@ and optionally the live score next to it.
 - **About and context menu**: right-click the ball for About Matchday, Refresh
   and Quit; Settings also has an About Matchday button. The About window shows
   the version, data source, leagues and credits.
+- **Languages**: pick a flag in Settings to switch the whole app (panel,
+  About window, menu, tooltip and notifications) without relaunching. Until
+  you pick one, Matchday follows your Mac's language.
 - **Keyboard** in the panel: `1`–`4` switch tabs, `h`/`l` cycle the league or
   filter chips, `j`/`k` scroll, `r` refreshes, `Esc` closes the panel.
 
 Leagues: LaLiga, Serie A, Premier League, Bundesliga, Ligue 1, Liga Portugal,
 MLS, UEFA Champions League and UEFA Nations League.
+
+Languages: English, Spanish, French, German, Italian, Portuguese (Portugal),
+Japanese, Korean and Simplified Chinese.
 
 ## Data source
 
