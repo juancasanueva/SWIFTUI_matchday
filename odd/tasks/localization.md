@@ -41,7 +41,7 @@ and most visible text is built as `String` in `matchday/Application/` derivation
       commit `feat(l10n): add the app language setting and flag selector`. T2 API:
       `String(appLocalized:)` / `String(appLocalizedKey:)` over `AppLocalization.shared`
       (matchday/Localization/AppLocalization.swift); SwiftUI roots wrap `AppLocaleRoot`.
-- [ ] T2 Make every user-visible string localizable: custom views take
+- [x] T2 Make every user-visible string localizable: custom views take
       `LocalizedStringKey`/resources, derivations/notifications/menu/tooltips resolve
       through the language bundle, dates follow the selected locale, fix the
       "Click a %@" sentence. English tests stay green.
@@ -49,6 +49,21 @@ and most visible text is built as `String` in `matchday/Application/` derivation
       language changes; fall back to the development language (`en`) instead of the
       system-resolved base bundle when a language has no `.lproj`; remove the temp
       bundles `AppLocalizationTests` creates.
+      Also (accepted review finding): the app locale keeps the system region when the
+      language differs (`en_NL` on a Dutch Mac, `de_NL` for German chosen there), so
+      24-hour time and date conventions survive; `pt-PT`/`zh-Hans` keep their own
+      locale (a `pt_BR`/`zh_TW` locale would point SwiftUI at an uncarried copy).
+      Suggestion done: `LanguageObserver` (extracted from the status item) applies the
+      bundle only on an actual language/locale change, with tests.
+      Evidence: RED (missing symbols) then GREEN; unit suite and Release build pass;
+      commit 46afd81. Design: views use literal keys, `Chip`/`SectionHeader` have
+      `verbatim:` inits for data; model labels (About rows, appearance, watch label,
+      tab names) stay English catalog keys looked up by the view with
+      `LocalizedStringKey(_:)` (`extractionState: manual`); derivations resolve through
+      `DisplayContext.bundle` (the store's language bundle); view-built strings use
+      `Locale.appBundle` from `\.locale`. English output change: short dates are now
+      locale-ordered (`Fri, Oct 23` instead of `Fri Oct 23`). Catalog: 161 keys,
+      synced from compiler `.stringsdata` with `xcstringstool sync`.
 - [ ] T3 Translate the catalog into the 8 languages; add catalog tests (every key
       translated in every language, matching format arguments, `.lproj` present);
       README mention.
@@ -66,7 +81,9 @@ and most visible text is built as `String` in `matchday/Application/` derivation
 |---|---|---|
 | T0 | inline (mechanical commit) | 817a119 |
 | T1 | delegated writer (2+ non-trivial files) | 677c6bf; 19 new test functions; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED (parent spot check re-ran: SUCCEEDED); Release BUILD SUCCEEDED; ~600 changed lines (new files + tests, not split). Review: medium, granted, approved + acknowledged (review-fa8268616a4ce637); advisories folded into T2 |
+| T2 | delegated writer (2+ non-trivial files, ~1.1k changed lines incl. catalog; not split: views, derivations and catalog move together) | 46afd81; new tests: LocalizedTextTests (derivation + notification through a ja bundle, catalog keys/comments, About retitle, Chip verbatim), LanguageObserverTests, en fallback, region carry, locale ordinals/dates; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED; Release BUILD SUCCEEDED |
 
 ## Next step
 
-T2 via one delegated writer: route non-view strings through `String(appLocalized:)`.
+T3: translate the 161 catalog keys into the 8 languages and extend `LocalizedTextTests`
+with per-language completeness and format-argument checks.
