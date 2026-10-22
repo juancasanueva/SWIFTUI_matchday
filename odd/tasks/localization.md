@@ -64,13 +64,26 @@ and most visible text is built as `String` in `matchday/Application/` derivation
       `Locale.appBundle` from `\.locale`. English output change: short dates are now
       locale-ordered (`Fri, Oct 23` instead of `Fri Oct 23`). Catalog: 161 keys,
       synced from compiler `.stringsdata` with `xcstringstool sync`.
-- [ ] T3 Translate the catalog into the 8 languages; add catalog tests (every key
+- [x] T3 Translate the catalog into the 8 languages; add catalog tests (every key
       translated in every language, matching format arguments, `.lproj` present);
       README mention.
       Also (accepted T2 review, approved + acknowledged review-94da83cb5ab2e5aa):
       footnote country precedence in WhereToWatch (the catalog name must win over a
       raw-code fallback; test the US/unknown branches); replace the fixed `Task.yield`
       loops in LanguageObserver/About retitle tests with a deadline-based wait.
+      Evidence: 161 keys x 8 languages translated (5 plural keys with one/other in
+      es/fr/de/it/pt-PT, plus English plurals for 4 of them); `StringCatalogTests`
+      (completeness, format arguments, `.lproj` in the built app, ja/es/plural lookups
+      from the built bundle); footnote RED (catalog-name and unknown-code cases failed)
+      then GREEN, parameter renamed `localizedName` and the store passes only
+      `Locale.localizedString(forRegionCode:)`; `waitUntil` polling helper
+      (matchdayTests/Support/Eventually.swift). Unit suite TEST SUCCEEDED; Release BUILD
+      SUCCEEDED with 9 `.lproj`. Commits 902348d, 3179d5c, 7f8d0dc, 0a4b8de.
+      Terminology: FT Final/Fin/Ende/Fine/Fim/試合終了/종료/完场; HT Descanso/MT/Halbzeit/
+      Intervallo/Intervalo/ハーフタイム/하프타임/中场; columns per the brief; LIVE
+      DIRECTO/EN DIRECT/LIVE/LIVE/DIRETO; team-vs-team uses an en dash in Latin
+      scripts, score-vs-opponent uses contra/contre/gegen/contro/contra; footnote
+      countries in parentheses to avoid article agreement.
 
 ## Acceptance criteria
 
@@ -86,8 +99,9 @@ and most visible text is built as `String` in `matchday/Application/` derivation
 | T0 | inline (mechanical commit) | 817a119 |
 | T1 | delegated writer (2+ non-trivial files) | 677c6bf; 19 new test functions; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED (parent spot check re-ran: SUCCEEDED); Release BUILD SUCCEEDED; ~600 changed lines (new files + tests, not split). Review: medium, granted, approved + acknowledged (review-fa8268616a4ce637); advisories folded into T2 |
 | T2 | delegated writer (2+ non-trivial files, ~1.1k changed lines incl. catalog; not split: views, derivations and catalog move together) | 46afd81; new tests: LocalizedTextTests (derivation + notification through a ja bundle, catalog keys/comments, About retitle, Chip verbatim), LanguageObserverTests, en fallback, region carry, locale ordinals/dates; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED; Release BUILD SUCCEEDED |
+| T3 | delegated writer (catalog data + tests + 2 source files; catalog is data, not split) | 902348d fix(watch), 3179d5c test(l10n), 7f8d0dc feat(l10n), 0a4b8de docs; `jq` valid, 161 keys; `xcodebuild test -only-testing:matchdayTests` TEST SUCCEEDED (31 StringCatalogTests cases); Release BUILD SUCCEEDED, Resources has de/en/es/fr/it/ja/ko/pt-PT/zh-Hans.lproj |
 
 ## Next step
 
-T3: translate the 161 catalog keys into the 8 languages and extend `LocalizedTextTests`
-with per-language completeness and format-argument checks.
+Review T3 under the user's receipt-driven review switch, then the user decides on
+merging `feat/localization` into `main`.
