@@ -67,6 +67,10 @@ and most visible text is built as `String` in `matchday/Application/` derivation
 - [ ] T3 Translate the catalog into the 8 languages; add catalog tests (every key
       translated in every language, matching format arguments, `.lproj` present);
       README mention.
+      Also (accepted T2 review, approved + acknowledged review-94da83cb5ab2e5aa):
+      footnote country precedence in WhereToWatch (the catalog name must win over a
+      raw-code fallback; test the US/unknown branches); replace the fixed `Task.yield`
+      loops in LanguageObserver/About retitle tests with a deadline-based wait.
 
 ## Acceptance criteria
 
