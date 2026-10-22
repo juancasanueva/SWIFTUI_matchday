@@ -4,7 +4,8 @@
 //
 //  Owns the single "About Matchday" window. It is created on the first
 //  `show()` and kept (`isReleasedWhenClosed = false`), so closing hides it
-//  and the next `show()` brings the same window back.
+//  and the next `show()` brings the same window back. Its content follows
+//  the app language live; the title is set again on every `show()`.
 //
 
 import AppKit
@@ -12,10 +13,13 @@ import SwiftUI
 
 final class AboutWindowController {
     private let info: AboutInfo
+    /// Supplies the app language to the hosted view.
+    private let store: MatchdayStore
     private var window: NSWindow?
 
-    init(info: AboutInfo) {
+    init(info: AboutInfo, store: MatchdayStore) {
         self.info = info
+        self.store = store
     }
 
     /// Brings the app forward and the window to the front. An `LSUIElement`
@@ -28,6 +32,8 @@ final class AboutWindowController {
         let window = self.window ?? makeWindow()
         self.window = window
         window.appearance = appearance
+        // The language may have changed since the window was built.
+        window.title = String(appLocalized: "About \(info.appName)", comment: "Title of the About window.")
         if !window.isVisible { window.center() }
 
         NSApp.activate()
@@ -47,11 +53,13 @@ final class AboutWindowController {
     private func makeWindow() -> NSWindow {
         let window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
-        window.title = "About \(info.appName)"
         window.isReleasedWhenClosed = false
         window.backgroundColor = NSColor(Theme.background)
 
-        let hosting = NSHostingController(rootView: AboutRootView(info: info))
+        let hosting = NSHostingController(
+            rootView: AppLocaleRoot { AboutRootView(info: info) }
+                .environment(store)
+        )
         window.contentViewController = hosting
         hosting.view.layoutSubtreeIfNeeded()
         window.setContentSize(CGSize(width: AboutView.width, height: hosting.view.fittingSize.height))

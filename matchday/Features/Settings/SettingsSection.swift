@@ -2,7 +2,7 @@
 //  SettingsSection.swift
 //  matchday
 //
-//  SETTINGS below the Teams grid: appearance, watch country, toggles, kickoff lead time,
+//  SETTINGS below the Teams grid: appearance, language, watch country, toggles, kickoff lead time,
 //  enabled leagues, launch at login, updates, Test notification, Refresh and About. Every
 //  change goes through the store, which persists it.
 //
@@ -20,6 +20,8 @@ struct SettingsSection: View {
         let settings = store.settings
         SettingsForm(
             appearance: Binding(get: { store.settings.appearance }, set: store.setAppearance),
+            language: store.language,
+            onSelectLanguage: store.setLanguage,
             country: Binding(get: { store.selectedCountry },
                              set: { code in store.updateSettings { $0.country = code } }),
             countryOptions: store.countryOptions,
@@ -99,6 +101,9 @@ struct LeagueSwitch: Identifiable, Hashable {
 
 struct SettingsForm: View {
     @Binding var appearance: AppearanceMode
+    /// The effective language: the choice, else the system's.
+    let language: AppLanguage
+    let onSelectLanguage: (AppLanguage) -> Void
     @Binding var country: String
     let countryOptions: [CountryOption]
     @Binding var spanish: Bool
@@ -121,6 +126,7 @@ struct SettingsForm: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "SETTINGS")
             appearancePicker
+            LanguageCard(selection: language, onSelect: onSelectLanguage)
             countryPicker
             SettingCard(title: "Spanish-language channels",
                         description: "Telemundo, Universo, ESPN Deportes, FOX Deportes and friends.",
@@ -357,12 +363,14 @@ struct OutlineButtonStyle: ButtonStyle {
 #if DEBUG
 #Preview {
     @Previewable @State var appearance = AppearanceMode.system
+    @Previewable @State var language = AppLanguage.english
     @Previewable @State var country = AppSettings.automaticCountry
     @Previewable @State var flags = [true, true, true, true, true, false]
     @Previewable @State var lead = 15
     ScrollView {
         SettingsForm(
             appearance: $appearance,
+            language: language, onSelectLanguage: { language = $0 },
             country: $country,
             countryOptions: [CountryOption(code: "auto", label: "Automatic — Madrid, Spain"),
                              CountryOption(code: "ES", label: "Spain")],

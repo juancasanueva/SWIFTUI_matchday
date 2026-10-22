@@ -62,7 +62,8 @@ struct MatchdayStoreTests {
 
     private func makeStore(_ transport: FakeTransport, settings: InMemorySettingsStore,
                            tick: Duration = .seconds(5), notifier: MatchNotifier? = nil,
-                           countryLocale: Locale = Locale(identifier: "en_US")) throws -> MatchdayStore {
+                           countryLocale: Locale = Locale(identifier: "en_US"),
+                           locale: Locale = Locale(identifier: "en_US")) throws -> MatchdayStore {
         let repository = MatchRepository(client: ESPNClient(transport: transport, calendar: utcCalendar()),
                                          cache: HTTPCache(directory: temporaryDirectory()),
                                          calendar: utcCalendar())
@@ -74,7 +75,7 @@ struct MatchdayStoreTests {
             countryResolver: CountryResolver(regionCode: "US", timeZone: TimeZone(identifier: "UTC")!,
                                              locale: countryLocale),
             calendar: utcCalendar(),
-            locale: Locale(identifier: "en_US"),
+            locale: locale,
             clock: { now },
             tick: tick,
             notifier: notifier
@@ -148,6 +149,43 @@ struct MatchdayStoreTests {
         #expect(settings.load().appearance == .dark)
         store.setAppearance(.system)
         #expect(settings.load().appearance == .system)
+    }
+
+    @Test func languageFollowsTheSystemUntilChosen() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
+                                  locale: Locale(identifier: "es_MX"))
+        #expect(store.settings.language == nil)
+        #expect(store.language == .spanish)
+        // The system's regional formats survive while it speaks the app language.
+        #expect(store.locale.identifier == "es_MX")
+        #expect(store.display.locale.identifier == "es_MX")
+    }
+
+    @Test func anUnshippedSystemLanguageFallsBackToEnglish() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
+                                  locale: Locale(identifier: "nl_NL"))
+        #expect(store.language == .english)
+        #expect(store.locale.identifier == "en")
+    }
+
+    @Test func choosingALanguagePersistsAndSwitchesTheLocale() throws {
+        let settings = InMemorySettingsStore()
+        let store = try makeStore(makeTransport(), settings: settings)
+        store.setLanguage(.japanese)
+        #expect(store.settings.language == .japanese)
+        #expect(settings.load().language == .japanese)
+        #expect(store.language == .japanese)
+        #expect(store.locale.identifier == "ja")
+        #expect(store.display.locale.identifier == "ja")
+
+        // A relaunch over the same settings keeps the choice.
+        let relaunched = try makeStore(makeTransport(), settings: settings)
+        #expect(relaunched.language == .japanese)
+
+        store.setLanguage(nil)
+        #expect(settings.load().language == nil)
+        #expect(store.language == .english)
+        #expect(store.locale.identifier == "en_US")
     }
 
     @Test func leagueSwitchesPersistAndKeepOneLeagueOn() throws {

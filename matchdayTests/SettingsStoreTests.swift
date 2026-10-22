@@ -137,6 +137,41 @@ struct AppSettingsTests {
         #expect(settings.kickoffLead == 30)
     }
 
+    /// Configs saved before the language setting follow the system language.
+    @Test func missingLanguageFollowsTheSystem() throws {
+        let json = #"{"appearance":"dark"}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        #expect(settings.language == nil)
+        #expect(AppSettings().language == nil)
+    }
+
+    @Test func languageDecodesFromItsLprojName() throws {
+        let json = #"{"language":"pt-PT"}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        #expect(settings.language == .portuguese)
+    }
+
+    /// An unknown value (e.g. from a newer version) follows the system language
+    /// without failing the rest of the settings.
+    @Test func unknownLanguageFollowsTheSystem() throws {
+        let json = #"{"language":"nl","kickoffLead":30}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        #expect(settings.language == nil)
+        #expect(settings.kickoffLead == 30)
+    }
+
+    @Test func languageRoundTripsThroughJSON() throws {
+        var settings = AppSettings()
+        settings.language = .japanese
+        let data = try JSONEncoder().encode(settings)
+        #expect(String(decoding: data, as: UTF8.self).contains(#""language":"ja""#))
+        #expect(try JSONDecoder().decode(AppSettings.self, from: data) == settings)
+
+        settings.language = nil
+        let cleared = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        #expect(cleared.language == nil)
+    }
+
     @Test func appearanceModesListSystemFirstWithTitles() {
         #expect(AppearanceMode.allCases == [.system, .light, .dark])
         #expect(AppearanceMode.allCases.map(\.title) == ["System", "Light", "Dark"])
@@ -169,6 +204,7 @@ struct UserDefaultsSettingsStoreTests {
         settings.kickoffLead = 30
         settings.barScore = false
         settings.appearance = .light
+        settings.language = .german
         UserDefaultsSettingsStore(defaults: defaults).save(settings)
 
         // A fresh store over the same defaults sees the same settings (a relaunch).
@@ -176,6 +212,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(loaded == settings)
         #expect(loaded.favorites == [arsenal])
         #expect(loaded.appearance == .light)
+        #expect(loaded.language == .german)
     }
 
     @Test func settingsAreStoredAsJSONUnderOneKey() throws {

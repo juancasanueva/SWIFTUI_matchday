@@ -47,6 +47,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         configurePopover(launchAtLogin: launchAtLogin)
         observeBar()
         observeAppearance()
+        observeLanguage()
         // Turning Reduce Motion on stops the pulse at once.
         reduceMotionObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
@@ -89,7 +90,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         // Hosted for the controller's whole life, so tab and chip selections
         // survive closing the panel.
         popover.contentViewController = NSHostingController(
-            rootView: PanelView()
+            rootView: AppLocaleRoot { PanelView() }
                 .environment(store)
                 .environment(launchAtLogin)
                 .environment(presentation)
@@ -124,6 +125,22 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let appearance = PanelAppearance.appearance(for: mode)
         guard popover.appearance?.name != appearance?.name else { return }
         popover.appearance = appearance
+    }
+
+    // MARK: - Language
+
+    /// Points the language bundle (strings built outside SwiftUI) at the
+    /// effective language on launch and on every change. The SwiftUI roots
+    /// follow the store through `AppLocaleRoot`.
+    private func observeLanguage() {
+        let (language, locale) = withObservationTracking {
+            (store.language, store.locale)
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeLanguage() }
+        }
+        AppLocalization.shared.apply(language, locale: locale)
+        // The bar title and tooltip are built outside SwiftUI; redraw them in the new language.
+        if look != nil { render() }
     }
 
     private func render(bar: BarState? = nil) {

@@ -32,6 +32,8 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
     var barScore = true
     /// Light or dark panel, or the system appearance.
     var appearance: AppearanceMode = .system
+    /// The app language chosen in Settings; `nil` follows the system language.
+    var language: AppLanguage?
     /// Catalog leagues this config has already been offered; `nil` for legacy configs.
     var leaguesSeen: [String]? = League.all.map(\.id)
 
@@ -94,7 +96,7 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case favorites, leagues, country, spanish, notifyKickoff, kickoffLead,
-             notifyGoals, notifyFinal, barScore, appearance, leaguesSeen
+             notifyGoals, notifyFinal, barScore, appearance, language, leaguesSeen
     }
 
     /// Missing keys keep their defaults so older saved settings still load.
@@ -114,6 +116,8 @@ nonisolated struct AppSettings: Codable, Hashable, Sendable {
         notifyFinal = try container.decodeIfPresent(Bool.self, forKey: .notifyFinal) ?? defaults.notifyFinal
         barScore = try container.decodeIfPresent(Bool.self, forKey: .barScore) ?? defaults.barScore
         appearance = (try? container.decodeIfPresent(AppearanceMode.self, forKey: .appearance)) ?? defaults.appearance
+        // An unknown language (e.g. from a newer version) follows the system.
+        language = (try? container.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? nil
         leaguesSeen = try container.decodeIfPresent([String].self, forKey: .leaguesSeen)
     }
 }

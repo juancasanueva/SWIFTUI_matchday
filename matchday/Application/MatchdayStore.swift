@@ -35,7 +35,8 @@ final class MatchdayStore {
     @ObservationIgnored let whereToWatch: WhereToWatch
     @ObservationIgnored let countryResolver: CountryResolver
     @ObservationIgnored private let calendar: Calendar
-    @ObservationIgnored private let locale: Locale
+    /// The system locale; `locale` is the one the app draws in.
+    @ObservationIgnored private let systemLocale: Locale
     @ObservationIgnored private let clock: @Sendable () -> Date
     @ObservationIgnored private let tick: Duration
     @ObservationIgnored private let notifier: MatchNotifier?
@@ -57,7 +58,7 @@ final class MatchdayStore {
         self.whereToWatch = whereToWatch
         self.countryResolver = countryResolver
         self.calendar = calendar
-        self.locale = locale
+        self.systemLocale = locale
         self.clock = clock
         self.tick = tick
         self.notifier = notifier
@@ -142,6 +143,11 @@ final class MatchdayStore {
         updateSettings { $0.appearance = mode }
     }
 
+    /// Chooses the app language; `nil` follows the system language again.
+    func setLanguage(_ language: AppLanguage?) {
+        updateSettings { $0.language = language }
+    }
+
     /// Turns a league on or off; the last enabled league stays on.
     func setLeague(_ id: String, enabled: Bool) {
         updateSettings { $0.setLeague(id, enabled: enabled) }
@@ -158,6 +164,16 @@ final class MatchdayStore {
     }
 
     // MARK: Derived state
+
+    /// The language the app draws in: the Settings choice, else the system's.
+    var language: AppLanguage {
+        settings.language ?? AppLanguage.matching(systemLocale)
+    }
+
+    /// Locale of the SwiftUI roots, the language bundle and every derived text.
+    var locale: Locale {
+        language.locale(preferring: systemLocale)
+    }
 
     var display: DisplayContext {
         DisplayContext(now: now, calendar: calendar, locale: locale)

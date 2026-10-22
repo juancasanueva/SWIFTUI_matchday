@@ -32,11 +32,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // The unit-test host gets neither polling nor a status item.
         guard !AppEnvironment.isHostingTests else { return }
         environment.start()
+        let store = environment.store
         let aboutWindow = AboutWindowController(
-            info: AboutModel.info(bundleInfo: Bundle.main.infoDictionary ?? [:])
+            info: AboutModel.info(bundleInfo: Bundle.main.infoDictionary ?? [:]),
+            store: store
         )
         self.aboutWindow = aboutWindow
-        let store = environment.store
         let updater = updaterFactory()
         self.updater = updater
         statusItemController = StatusItemController(
