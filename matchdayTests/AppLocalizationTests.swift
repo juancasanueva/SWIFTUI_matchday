@@ -125,11 +125,6 @@ final class AppLocalizationTests {
 final class LanguageObserverTests {
     private let bundles = TemporaryBundles()
 
-    /// Waits for the observer's next turn on the main actor.
-    private func settle() async {
-        for _ in 0..<20 { await Task.yield() }
-    }
-
     @Test func appliesTheStoresLanguageNowAndOnEveryChange() async throws {
         let base = try bundles.make(["ja": #""Language" = "言語";"#])
         let localization = AppLocalization(base: base)
@@ -142,7 +137,7 @@ final class LanguageObserverTests {
 
         #expect(applied == [.english])
         store.setLanguage(.japanese)
-        await settle()
+        await waitUntil { applied.count == 2 }
         #expect(applied == [.english, .japanese])
         #expect(localization.bundle.bundlePath.hasSuffix("ja.lproj"))
         #expect(localization.locale.language.languageCode?.identifier == "ja")
@@ -155,8 +150,11 @@ final class LanguageObserverTests {
         let observer = LanguageObserver(store: store) { _, _ in count += 1 }
         store.setAppearance(.dark)
         store.setKickoffLead(30)
-        await settle()
-        #expect(count == 1)
+        // A language switch after them is reported once; had either of them been
+        // reported too, the count would pass 2 by the time this one lands.
+        store.setLanguage(.japanese)
+        await waitUntil { count >= 2 }
+        #expect(count == 2)
         withExtendedLifetime(observer) {}
     }
 }

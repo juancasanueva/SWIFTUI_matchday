@@ -119,7 +119,7 @@ final class AboutWindowTests {
         #expect(controller.windowTitle == "About Matchday")
 
         store.setLanguage(.japanese)
-        for _ in 0..<20 { await Task.yield() }
+        await waitUntil { controller.windowTitle == "Matchdayについて" }
         #expect(controller.windowTitle == "Matchdayについて")
     }
 }
