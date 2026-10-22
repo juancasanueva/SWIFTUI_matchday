@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BC9CD5413089FD2900B6B246 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BC9CD5403089FD2900B6B246 /* Localizable.xcstrings */; };
 		BCA100000000000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BCA100000000000000000002 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		BC41CC453089102700FEF967 /* Matchday.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Matchday.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC41CC543089102800FEF967 /* matchdayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = matchdayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC41CC5E3089102800FEF967 /* matchdayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = matchdayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC9CD5403089FD2900B6B246 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +82,7 @@
 		BC41CC3C3089102700FEF967 = {
 			isa = PBXGroup;
 			children = (
+				BC9CD5403089FD2900B6B246 /* Localizable.xcstrings */,
 				BC41CC473089102700FEF967 /* matchday */,
 				BC41CC573089102800FEF967 /* matchdayTests */,
 				BC41CC613089102800FEF967 /* matchdayUITests */,
@@ -198,6 +201,14 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				fr,
+				de,
+				it,
+				ja,
+				ko,
+				"pt-PT",
+				es,
 			);
 			mainGroup = BC41CC3C3089102700FEF967;
 			minimizedProjectReferenceProxies = 1;
@@ -221,6 +232,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC9CD5413089FD2900B6B246 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,6 +350,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -395,6 +408,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
