@@ -117,13 +117,36 @@ struct WhereToWatchTests {
     }
 
     @Test func footnoteNamesTheCountryAndSeason() {
-        #expect(watch.footnote(countryCode: "ES", fallbackName: "Spain")
+        #expect(watch.footnote(countryCode: "ES", localizedName: "Spain")
                 == "Where to watch shows 2026-27 rights holders for Spain.")
-        #expect(watch.footnote(countryCode: "FR", fallbackName: "France")
+        #expect(watch.footnote(countryCode: "FR", localizedName: "France")
                 == "Where to watch shows 2026-27 rights holders for France.")
-        #expect(watch.footnote(countryCode: nil, fallbackName: nil)
+        #expect(watch.footnote(countryCode: nil, localizedName: nil)
                 == "Where to watch shows 2026-27 rights holders for your country.")
-        #expect(watch.footnote(countryCode: "US", fallbackName: nil).hasPrefix("Channels marked per match come from ESPN's US listings"))
+        #expect(watch.footnote(countryCode: "US", localizedName: nil).hasPrefix("Channels marked per match come from ESPN's US listings"))
+    }
+
+    @Test func footnoteInTheUSExplainsESPNListingsWhateverTheName() {
+        #expect(watch.footnote(countryCode: "us", localizedName: "United States")
+                == "Channels marked per match come from ESPN's US listings; the rest show the 2026-27 league rights holders until the channel is posted.")
+    }
+
+    @Test func footnotePrefersTheLocalizedNameWhenTheLocaleNamesTheRegion() {
+        #expect(watch.footnote(countryCode: "GB", localizedName: "Reino Unido")
+                == "Where to watch shows 2026-27 rights holders for Reino Unido.")
+    }
+
+    /// A locale that cannot name a region hands back nothing or the raw code;
+    /// the catalog's name beats both.
+    @Test(arguments: [nil, "GB", "gb", ""])
+    func footnoteFallsBackToTheCatalogName(_ unnamed: String?) {
+        #expect(watch.footnote(countryCode: "gb", localizedName: unnamed)
+                == "Where to watch shows 2026-27 rights holders for United Kingdom.")
+    }
+
+    @Test func footnoteShowsTheCodeOfAnUnknownUnnamedCountry() {
+        #expect(watch.footnote(countryCode: "QQ", localizedName: nil)
+                == "Where to watch shows 2026-27 rights holders for QQ.")
     }
 
     @Test func countryListIsSortedByName() {

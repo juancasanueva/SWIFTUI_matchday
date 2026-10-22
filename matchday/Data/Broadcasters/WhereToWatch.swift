@@ -48,21 +48,24 @@ nonisolated struct WhereToWatch: Sendable {
     }
 
     /// Footnote under the watch pills (`WatchFootnote`), in the app language.
-    /// The country is named by `fallbackName` (the app's own name for it) first;
-    /// the catalog's English name only fills in when there is none.
-    func footnote(countryCode: String?, fallbackName: String?,
+    /// The country is named by `localizedName` (the app locale's name for it)
+    /// when the locale actually names the region, else by the catalog's English
+    /// name, else by its code. A name that is empty or just the code counts as none.
+    func footnote(countryCode: String?, localizedName: String?,
                   display: DisplayContext = DisplayContext(now: .now, locale: AppLocalization.shared.locale,
                                                            bundle: AppLocalization.shared.bundle)) -> String {
         let season = catalog.season
-        if countryCode?.uppercased() == "US" {
-            return display.text("Channels marked per match come from ESPN's US listings; the rest show the \(season) league rights holders until the channel is posted.",
-                                comment: "Footnote under the matches in the US. The argument is the season, e.g. 2026-27.")
-        }
-        let catalogName = countryCode.flatMap { catalog.countries[$0.uppercased()]?.name }.flatMap { $0.isEmpty ? nil : $0 }
-        guard let name = fallbackName ?? catalogName else {
+        guard let code = countryCode?.uppercased(), !code.isEmpty else {
             return display.text("Where to watch shows \(season) rights holders for your country.",
                                 comment: "Footnote under the matches when the country is unknown. The argument is the season.")
         }
+        if code == "US" {
+            return display.text("Channels marked per match come from ESPN's US listings; the rest show the \(season) league rights holders until the channel is posted.",
+                                comment: "Footnote under the matches in the US. The argument is the season, e.g. 2026-27.")
+        }
+        let name = [localizedName, catalog.countries[code]?.name]
+            .compactMap { $0 }
+            .first { !$0.isEmpty && $0.uppercased() != code } ?? code
         return display.text("Where to watch shows \(season) rights holders for \(name).",
                             comment: "Footnote under the matches. Arguments: the season (e.g. 2026-27), then the country.")
     }

@@ -239,8 +239,10 @@ final class MatchdayStore {
     }
 
     var footnote: String {
+        // `countryName(for:)` falls back to the raw code; only a real name is passed on.
         whereToWatch.footnote(countryCode: countryCode,
-                              fallbackName: countryCode.map(countries.countryName(for:)), display: display)
+                              localizedName: countryCode.flatMap(countries.locale.localizedString(forRegionCode:)),
+                              display: display)
     }
 
     var following: [FollowingCard] {
