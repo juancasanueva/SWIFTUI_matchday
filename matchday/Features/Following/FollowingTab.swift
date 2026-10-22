@@ -56,8 +56,8 @@ struct FollowingEmptyView: View {
                 .accessibilityHidden(true)
             Text("Follow your teams")
                 .font(Theme.font(.heading, weight: .bold))
-            Text("Pick the clubs and national teams you care about. Matchday tracks their games, "
-                 + "tells you which channel has them where you are, and pings you at kickoff.")
+            // One literal, so the whole sentence is a single catalog key.
+            Text("Pick the clubs and national teams you care about. Matchday tracks their games, tells you which channel has them where you are, and pings you at kickoff.")
                 .font(Theme.font(.body))
                 .foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center)

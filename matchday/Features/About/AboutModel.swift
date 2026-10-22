@@ -5,16 +5,22 @@
 //  Everything the About window shows, as plain values. Identity, credits and
 //  links describe the project, so they are constants; only the version comes
 //  from the bundle, through the Info.plist dictionary the caller passes.
+//  Texts are English catalog keys: the view looks them up in the app language,
+//  so an open window follows a language change.
 //
 
 import Foundation
 
 /// One row of the About card: a label and a value, optionally a link.
 nonisolated struct AboutRow: Sendable, Equatable, Identifiable {
+    /// A catalog key.
     let label: String
     /// Visible text; for a link, the address without its scheme.
     let value: String
     var url: URL?
+    /// The value is a catalog key too; otherwise it is data (league names,
+    /// addresses, the version) and drawn as is.
+    var isValueLocalized = false
 
     var id: String { label }
 }
@@ -33,10 +39,10 @@ nonisolated enum AboutModel {
     static let tagline = "Follow your soccer teams from the menu bar."
     static let footer = "Personal project. Not affiliated with ESPN or any league or club."
 
-    private static let unknownVersion = "Unknown"
+    static let unknownVersion = "Unknown"
 
     private static let rows = [
-        AboutRow(label: "Data", value: "ESPN public site API (unofficial)"),
+        AboutRow(label: "Data", value: "ESPN public site API (unofficial)", isValueLocalized: true),
         AboutRow(label: "Leagues",
                  // Non-breaking spaces keep each league name whole and its separator on
                  // the same line, so the row only wraps between leagues.

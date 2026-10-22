@@ -194,7 +194,7 @@ struct PanelTabBar: View {
     var body: some View {
         HStack(spacing: 6) {
             ForEach(PanelTab.allCases) { tab in
-                Chip(title: tab.title, isSelected: selection == tab) {
+                Chip(title: LocalizedStringKey(tab.title), isSelected: selection == tab) {
                     selection = tab
                 }
             }
@@ -240,7 +240,7 @@ struct PanelFooter: View {
     @Previewable @State var scroll = ScrollPosition(edge: .top)
     PanelShell(summary: "NEXT RMA V RBL · TODAY 9:00 PM", location: "Madrid, Spain",
                isRefreshing: false, tab: $tab, scrollPosition: $scroll, onRefresh: {}) {
-        Text("\(tab.title) content")
+        Text(verbatim: "\(tab.title) content")
             .foregroundStyle(Theme.dim)
     }
 }

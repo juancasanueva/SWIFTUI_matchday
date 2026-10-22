@@ -20,16 +20,27 @@ nonisolated struct BarState: Hashable, Sendable {
     /// Nothing followed yet.
     let isDimmed: Bool
 
-    static let empty = BarState(showDot: false, isLive: false, liveText: nil,
-                                tooltip: Derivations.emptyTooltip, isDimmed: true)
+    /// Before the first refresh; the tooltip is in the current app language.
+    static var empty: BarState {
+        BarState(showDot: false, isLive: false, liveText: nil, tooltip: Derivations.emptyTooltip, isDimmed: true)
+    }
 }
 
 nonisolated extension Derivations {
     /// The bar dot lights up when a followed team plays within this window.
     static let dotLead: TimeInterval = 12 * 3600
-    static let emptyTooltip = "Matchday — follow some teams"
 
-    /// One-line status under the panel title.
+    /// Hover text with nothing to report, in the current app language.
+    static var emptyTooltip: String {
+        emptyTooltip(DisplayContext(now: .now, locale: AppLocalization.shared.locale,
+                                    bundle: AppLocalization.shared.bundle))
+    }
+
+    static func emptyTooltip(_ display: DisplayContext) -> String {
+        display.text("Matchday — follow some teams", comment: "Menu bar tooltip while no team is followed.")
+    }
+
+    /// One-line status under the panel title, in capitals.
     static func headerSummary(
         snapshot: MatchSnapshot,
         cards: [FollowingCard],
@@ -38,9 +49,12 @@ nonisolated extension Derivations {
     ) -> String {
         switch snapshot.status {
         case .loading:
-            return "LOADING FIXTURES…"
+            return display.text("Loading fixtures…").uppercased(with: display.locale)
         case .offline:
-            return "OFFLINE · " + (snapshot.lastError ?? "can't reach ESPN").uppercased(with: display.locale)
+            let reason = snapshot.lastError
+                ?? display.text("can't reach ESPN", comment: "Why the data is offline, after “Offline · ”.")
+            return display.text("Offline · \(reason)", comment: "Panel status line without a connection. Shown in capitals.")
+                .uppercased(with: display.locale)
         case .ok, .stale:
             break
         }
@@ -49,22 +63,25 @@ nonisolated extension Derivations {
         let liveFavorites = cards.filter { $0.live != nil }.count
         let liveCount = window.filter(\.isLive).count
         if liveFavorites > 0 {
-            bits.append("\(liveFavorites) LIVE")
+            bits.append(display.text("\(liveFavorites) live",
+                                     comment: "Panel status: how many followed teams are playing now. Shown in capitals."))
         } else if liveCount > 0 {
-            bits.append("\(liveCount) LIVE NOW")
+            bits.append(display.text("\(liveCount) live now",
+                                     comment: "Panel status: how many matches are being played now. Shown in capitals."))
         }
         if let next = cards.compactMap(\.next).min(by: { $0.kickoff < $1.kickoff }) {
             let when = "\(display.dayLabel(next.kickoff)) \(display.timeLabel(next.kickoff))"
-            bits.append("NEXT \(next.home.team.abbreviation) v \(next.away.team.abbreviation) · \(when)"
-                .uppercased(with: display.locale))
+            bits.append(display.text("Next \(next.home.team.abbreviation) v \(next.away.team.abbreviation) · \(when)",
+                                     comment: "Panel status: the next followed match (home v away team codes), then day and time. v = versus. Shown in capitals."))
         }
         if bits.isEmpty {
-            bits.append("\(window.count) MATCHES THIS WEEK")
+            bits.append(display.text("\(window.count) matches this week",
+                                     comment: "Panel status: number of matches in the polled window. Shown in capitals."))
         }
         if snapshot.status == .stale {
-            bits.append("STALE")
+            bits.append(display.text("Stale", comment: "Panel status: the data is out of date. Shown in capitals."))
         }
-        return bits.joined(separator: "  ·  ")
+        return bits.joined(separator: "  ·  ").uppercased(with: display.locale)
     }
 
     /// Menu bar icon state.
@@ -79,8 +96,9 @@ nonisolated extension Derivations {
             } else if let next = card.next {
                 let channels = (card.watch?.names(limit: 2) ?? []).joined(separator: ", ")
                 let when = "\(display.dayLabel(next.kickoff)) \(display.timeLabel(next.kickoff))"
-                lines.append("\(next.home.team.shortName) v \(next.away.team.shortName) — \(when)"
-                             + (channels.isEmpty ? "" : "  ·  \(channels)"))
+                let line = display.text("\(next.home.team.shortName) v \(next.away.team.shortName) — \(when)",
+                                        comment: "Menu bar tooltip line: home v away team, then day and time. v = versus.")
+                lines.append(line + (channels.isEmpty ? "" : "  ·  \(channels)"))
             }
         }
 
@@ -93,7 +111,7 @@ nonisolated extension Derivations {
             showDot: liveMatch != nil || soon,
             isLive: liveMatch != nil,
             liveText: liveText,
-            tooltip: lines.isEmpty ? emptyTooltip : lines.joined(separator: "\n"),
+            tooltip: lines.isEmpty ? emptyTooltip(display) : lines.joined(separator: "\n"),
             isDimmed: settings.favorites.isEmpty
         )
     }

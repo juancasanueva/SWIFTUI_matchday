@@ -120,7 +120,7 @@ nonisolated extension Derivations {
         if match.state == .pre {
             channels = watch(match).names(limit: rowChannelLimit)
         } else if followed || match.isLive {
-            let goals = match.keyEvents.filter(\.isGoal).map(\.label)
+            let goals = match.keyEvents.filter(\.isGoal).map { $0.label(locale: display.locale, bundle: display.bundle) }
             scorers = goals.isEmpty ? nil : goals.joined(separator: " · ")
         }
         return MatchRowItem(match: match, isFollowed: followed, status: display.statusText(match),

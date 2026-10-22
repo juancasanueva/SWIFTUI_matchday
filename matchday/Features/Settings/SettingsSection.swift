@@ -55,7 +55,9 @@ struct SettingsSection: View {
     /// Error or approval hint under the launch-at-login toggle.
     private var launchNote: String? {
         if let error = launchAtLogin.errorMessage { return error }
-        return launchAtLogin.needsApproval ? "Allow Matchday in System Settings › Login Items." : nil
+        guard launchAtLogin.needsApproval else { return nil }
+        return String(appLocalized: "Allow Matchday in System Settings › Login Items.", bundle: store.bundle,
+                      locale: store.locale, comment: "Hint under Launch at login while macOS waits for the user's approval.")
     }
 
     /// `nil` without an updater (the unit-test host), which hides the card.
@@ -64,7 +66,8 @@ struct SettingsSection: View {
         return UpdatesSettings(
             automaticChecks: Binding(get: { updater.automaticallyChecksForUpdates },
                                      set: { updater.automaticallyChecksForUpdates = $0 }),
-            lastChecked: UpdateCheckPresentation(lastCheck: updater.lastUpdateCheckDate, now: .now).label,
+            lastChecked: UpdateCheckPresentation(lastCheck: updater.lastUpdateCheckDate, now: .now,
+                                                 locale: store.locale).label,
             canCheck: UpdateCommandEnablement.isEnabled(canCheckForUpdates: updater.canCheckForUpdates),
             onCheck: updater.checkForUpdates
         )
@@ -183,7 +186,8 @@ struct SettingsForm: View {
                     .font(Theme.font(.body, weight: .semibold))
                 Picker("Appearance", selection: $appearance) {
                     ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                        Text(mode.title).tag(mode)
+                        // `title` is a catalog key.
+                        Text(LocalizedStringKey(mode.title)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -291,8 +295,8 @@ struct UpdatesCard: View {
 
 /// Bordered card with a title, an optional description, a switch, and optional extra controls.
 struct SettingCard<Extra: View>: View {
-    let title: String
-    var description: String?
+    let title: LocalizedStringKey
+    var description: LocalizedStringKey?
     @Binding var isOn: Bool
     @ViewBuilder var extra: Extra
 
@@ -320,7 +324,7 @@ struct SettingCard<Extra: View>: View {
 }
 
 extension SettingCard where Extra == EmptyView {
-    init(title: String, description: String? = nil, isOn: Binding<Bool>) {
+    init(title: LocalizedStringKey, description: LocalizedStringKey? = nil, isOn: Binding<Bool>) {
         self.init(title: title, description: description, isOn: isOn) { EmptyView() }
     }
 }
@@ -379,7 +383,7 @@ struct OutlineButtonStyle: ButtonStyle {
             leagues: League.all.map { LeagueSwitch(league: $0, isOn: true, isLocked: false) },
             onSetLeague: { _, _ in },
             launchAtLogin: $flags[5], launchNote: nil, onOpenLoginItems: {},
-            updates: UpdatesSettings(automaticChecks: $flags[0], lastChecked: UpdateCheckPresentation.neverChecked,
+            updates: UpdatesSettings(automaticChecks: $flags[0], lastChecked: UpdateCheckPresentation.neverChecked(),
                                      canCheck: true, onCheck: {}),
             onTestNotification: {}, onRefresh: {}, onAbout: {}
         )

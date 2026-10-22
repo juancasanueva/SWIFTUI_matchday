@@ -33,6 +33,7 @@ final class MatchdayStore {
     @ObservationIgnored private let repository: MatchRepository
     @ObservationIgnored private let settingsStore: any SettingsStore
     @ObservationIgnored let whereToWatch: WhereToWatch
+    /// Names countries in its own locale; `countries` renames them in the app's.
     @ObservationIgnored let countryResolver: CountryResolver
     @ObservationIgnored private let calendar: Calendar
     /// The system locale; `locale` is the one the app draws in.
@@ -175,8 +176,18 @@ final class MatchdayStore {
         language.locale(preferring: systemLocale)
     }
 
+    /// The `.lproj` bundle of `language`, for texts built outside SwiftUI.
+    var bundle: Bundle {
+        AppLocalization.bundle(for: language)
+    }
+
     var display: DisplayContext {
-        DisplayContext(now: now, calendar: calendar, locale: locale)
+        DisplayContext(now: now, calendar: calendar, locale: locale, bundle: bundle)
+    }
+
+    /// The country resolver naming countries in the app language.
+    private var countries: CountryResolver {
+        countryResolver.naming(in: locale)
     }
 
     /// ISO code used for where-to-watch, or `nil` when the system has no region.
@@ -188,27 +199,30 @@ final class MatchdayStore {
     var locationLabel: String {
         let setting = settings.country.trimmingCharacters(in: .whitespaces)
         if setting.isEmpty || setting == AppSettings.automaticCountry {
-            return countryResolver.automaticLabel
+            return countries.automaticLabel
         }
-        return countryCode.map(countryResolver.countryName(for:)) ?? setting
+        return countryCode.map(countries.countryName(for:)) ?? setting
     }
 
     /// "Watching from" choices: automatic, then the countries with rights data by
-    /// localized name, plus a saved country outside the catalog (`countries`).
+    /// name in the app language, plus a saved country outside the catalog (`countries`).
     var countryOptions: [CountryOption] {
-        let automatic = CountryOption(code: AppSettings.automaticCountry,
-                                      label: "Automatic — \(countryResolver.automaticLabel)")
-        // Sorted in the resolver's locale (the one naming the countries), not the process locale.
-        let locale = countryResolver.locale
+        let countries = countries
+        let automatic = CountryOption(
+            code: AppSettings.automaticCountry,
+            label: display.text("Automatic — \(countries.automaticLabel)",
+                                comment: "Watching-from choice that follows the Mac's region. The argument is the detected place."))
+        // Sorted in the app locale (the one naming the countries), not the process locale.
+        let locale = countries.locale
         var options = whereToWatch.catalog.countryChoices
-            .map { CountryOption(code: $0.code, label: countryResolver.countryName(for: $0.code)) }
+            .map { CountryOption(code: $0.code, label: countries.countryName(for: $0.code)) }
             .sorted {
                 $0.label.compare($1.label, options: [.caseInsensitive, .numeric, .widthInsensitive],
                                  locale: locale) == .orderedAscending
             }
         let selected = selectedCountry
         if selected != AppSettings.automaticCountry && !options.contains(where: { $0.code == selected }) {
-            options.append(CountryOption(code: selected, label: countryResolver.countryName(for: selected)))
+            options.append(CountryOption(code: selected, label: countries.countryName(for: selected)))
         }
         return [automatic] + options
     }
@@ -226,7 +240,7 @@ final class MatchdayStore {
 
     var footnote: String {
         whereToWatch.footnote(countryCode: countryCode,
-                              fallbackName: countryCode.map(countryResolver.countryName(for:)))
+                              fallbackName: countryCode.map(countries.countryName(for:)), display: display)
     }
 
     var following: [FollowingCard] {

@@ -11,14 +11,25 @@ struct FormBox: View {
     let result: FormResult
     var size: CGFloat = 16
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
-        Text(result.outcome.rawValue)
+        letter
             .font(.system(size: size * 0.58, weight: .bold))
             .foregroundStyle(result.outcome == .draw ? Theme.foreground : .white)
             .frame(width: size, height: size)
             .background(color, in: .rect(cornerRadius: size / 4))
-            .help("\(result.isHome ? "vs" : "at") \(result.opponent)  \(result.score)")
-            .accessibilityLabel("\(outcomeName) \(result.summary)")
+            .help(result.isHome ? "vs \(result.opponent)  \(result.score)" : "at \(result.opponent)  \(result.score)")
+            .accessibilityLabel(accessibilityText)
+    }
+
+    /// W, D or L, the same keys as the standings columns.
+    private var letter: Text {
+        switch result.outcome {
+        case .win: Text("W")
+        case .draw: Text("D")
+        case .loss: Text("L")
+        }
     }
 
     private var color: Color {
@@ -29,11 +40,12 @@ struct FormBox: View {
         }
     }
 
-    private var outcomeName: String {
-        switch result.outcome {
-        case .win: "Win"
-        case .draw: "Draw"
-        case .loss: "Loss"
+    private var accessibilityText: Text {
+        let summary = result.summary(locale: locale)
+        return switch result.outcome {
+        case .win: Text("Win \(summary)", comment: "VoiceOver: a recent win, then its score and opponent.")
+        case .draw: Text("Draw \(summary)", comment: "VoiceOver: a recent draw, then its score and opponent.")
+        case .loss: Text("Loss \(summary)", comment: "VoiceOver: a recent loss, then its score and opponent.")
         }
     }
 }

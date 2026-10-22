@@ -26,12 +26,16 @@ nonisolated enum AppLanguage: String, Codable, CaseIterable, Sendable {
 
     /// The locale the app formats and looks strings up in: the system's own
     /// when it already speaks this language, so regional formats (24-hour time
-    /// in Britain) survive, else this language's locale. The Portugal and
-    /// Simplified Chinese copies always use their own, so a Brazilian or
-    /// Taiwanese system never asks for a copy the app does not carry.
+    /// in Britain) survive; otherwise this language in the system's region
+    /// (`en_NL` on a Dutch Mac), so text changes language but dates and times
+    /// keep the user's conventions. The Portugal and Simplified Chinese copies
+    /// always use their own locale: `pt_BR` or `zh_TW` would point SwiftUI at a
+    /// copy the app does not carry.
     func locale(preferring system: Locale) -> Locale {
-        guard !rawValue.contains("-"), system.language.languageCode?.identifier == rawValue else { return locale }
-        return system
+        if rawValue.contains("-") { return locale }
+        if system.language.languageCode?.identifier == rawValue { return system }
+        guard let region = system.region?.identifier else { return locale }
+        return Locale(identifier: "\(rawValue)_\(region)")
     }
 
     /// The flag image set in the asset catalog.

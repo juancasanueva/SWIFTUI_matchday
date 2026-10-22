@@ -4,8 +4,8 @@
 //
 //  Owns the single "About Matchday" window. It is created on the first
 //  `show()` and kept (`isReleasedWhenClosed = false`), so closing hides it
-//  and the next `show()` brings the same window back. Its content follows
-//  the app language live; the title is set again on every `show()`.
+//  and the next `show()` brings the same window back. Its content and its
+//  title follow the app language live, even while the window is open.
 //
 
 import AppKit
@@ -15,11 +15,19 @@ final class AboutWindowController {
     private let info: AboutInfo
     /// Supplies the app language to the hosted view.
     private let store: MatchdayStore
+    /// The bundle carrying the `.lproj` folders the title is looked up in.
+    private let base: Bundle
     private var window: NSWindow?
+    private var languageObserver: LanguageObserver?
+    private var title = ""
 
-    init(info: AboutInfo, store: MatchdayStore) {
+    init(info: AboutInfo, store: MatchdayStore, base: Bundle = .main) {
         self.info = info
         self.store = store
+        self.base = base
+        languageObserver = LanguageObserver(store: store) { [weak self] language, locale in
+            self?.retitle(language: language, locale: locale)
+        }
     }
 
     /// Brings the app forward and the window to the front. An `LSUIElement`
@@ -29,11 +37,8 @@ final class AboutWindowController {
     /// `appearance` follows the panel's Appearance setting; `nil` follows the
     /// system. Theme's dynamic colors resolve against it.
     func show(appearance: NSAppearance? = nil) {
-        let window = self.window ?? makeWindow()
-        self.window = window
+        let window = loadWindow()
         window.appearance = appearance
-        // The language may have changed since the window was built.
-        window.title = String(appLocalized: "About \(info.appName)", comment: "Title of the About window.")
         if !window.isVisible { window.center() }
 
         NSApp.activate()
@@ -45,6 +50,27 @@ final class AboutWindowController {
 
     var isWindowVisible: Bool {
         window?.isVisible ?? false
+    }
+
+    var windowTitle: String? {
+        window?.title
+    }
+
+    /// The window, built on first use, without showing it.
+    @discardableResult
+    func loadWindow() -> NSWindow {
+        if let window { return window }
+        let window = makeWindow()
+        window.title = title
+        self.window = window
+        return window
+    }
+
+    /// The title is built outside SwiftUI, so it is set again on every language change.
+    private func retitle(language: AppLanguage, locale: Locale) {
+        title = String(appLocalized: "About \(info.appName)", bundle: AppLocalization.bundle(for: language, in: base),
+                       locale: locale, comment: "Title of the About window. The argument is the app name.")
+        window?.title = title
     }
 
     /// Sizes the content from the hosted view: a hosting controller never sets

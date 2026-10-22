@@ -31,15 +31,24 @@ nonisolated enum ContextMenuEntry: Sendable, Equatable {
 
 nonisolated enum ContextMenuModel {
     /// About comes first, as in every macOS application menu, with the update
-    /// command right behind it, and Quit last.
-    static func entries(canCheckForUpdates: Bool) -> [ContextMenuEntry] {
-        [
-            .item(ContextMenuItem(title: "About Matchday", action: .openAbout)),
-            .item(ContextMenuItem(title: "Check for Updates\u{2026}", action: .checkForUpdates,
+    /// command right behind it, and Quit last. Titles are in the app language
+    /// of `bundle`; the menu is rebuilt on every right click.
+    static func entries(canCheckForUpdates: Bool,
+                        bundle: Bundle = AppLocalization.shared.bundle) -> [ContextMenuEntry] {
+        func title(_ value: String.LocalizationValue, _ comment: StaticString) -> String {
+            String(appLocalized: value, bundle: bundle, comment: comment)
+        }
+        return [
+            .item(ContextMenuItem(title: title("About Matchday", "Menu item that opens the About window."),
+                                  action: .openAbout)),
+            .item(ContextMenuItem(title: title("Check for Updates\u{2026}", "Menu item and button that look for a new version."),
+                                  action: .checkForUpdates,
                                   isEnabled: UpdateCommandEnablement.isEnabled(canCheckForUpdates: canCheckForUpdates))),
-            .item(ContextMenuItem(title: "Refresh", action: .refresh)),
+            .item(ContextMenuItem(title: title("Refresh", "Menu item and button that fetch fresh data now."),
+                                  action: .refresh)),
             .separator,
-            .item(ContextMenuItem(title: "Quit Matchday", action: .quit, keyEquivalent: "q")),
+            .item(ContextMenuItem(title: title("Quit Matchday", "Menu item that quits the app."),
+                                  action: .quit, keyEquivalent: "q")),
         ]
     }
 }

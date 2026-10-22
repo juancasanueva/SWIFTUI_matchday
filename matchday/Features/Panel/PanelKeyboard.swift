@@ -14,7 +14,17 @@ nonisolated enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case following, matches, tables, teams, settings
 
     var id: Self { self }
-    var title: String { rawValue.capitalized }
+
+    /// The tab's name, a catalog key: the tab bar looks it up in the app language.
+    var title: String {
+        switch self {
+        case .following: "Following"
+        case .matches: "Matches"
+        case .tables: "Tables"
+        case .teams: "Teams"
+        case .settings: "Settings"
+        }
+    }
 }
 
 nonisolated enum PanelCommand: Equatable, Sendable {

@@ -52,7 +52,12 @@ final class LaunchAtLogin {
             }
             errorMessage = nil
         } catch {
-            errorMessage = "Couldn't turn \(enabled ? "on" : "off") launch at login: \(error.localizedDescription)"
+            let reason = error.localizedDescription
+            errorMessage = enabled
+                ? String(appLocalized: "Couldn't turn on launch at login: \(reason)",
+                         comment: "Settings error. The argument is the system's reason.")
+                : String(appLocalized: "Couldn't turn off launch at login: \(reason)",
+                         comment: "Settings error. The argument is the system's reason.")
         }
         status = service.status
     }

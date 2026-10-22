@@ -15,7 +15,7 @@ struct LeaguePicker: View {
     var body: some View {
         FlowLayout(spacing: 6) {
             ForEach(leagues) { league in
-                Chip(title: league.short, isSelected: selection == league.id, size: .small) {
+                Chip(verbatim: league.short, isSelected: selection == league.id, size: .small) {
                     selection = league.id
                 }
                 .help(league.name)

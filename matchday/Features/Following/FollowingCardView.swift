@@ -13,6 +13,8 @@ struct FollowingCardView: View {
     let card: FollowingCard
 
     @Environment(\.openURL) private var openURL
+    /// The app locale; texts built here resolve in its language.
+    @Environment(\.locale) private var locale
 
     private var isLive: Bool { card.live != nil }
     private var tint: Color { Theme.readable(hex: card.colorHex, fallback: .accent) }
@@ -78,7 +80,7 @@ struct FollowingCardView: View {
                         LeagueTag(league: league)
                     }
                     if let standing = card.standing {
-                        Text(standing.text)
+                        Text(standing.text(locale: locale))
                             .font(Theme.font(.small))
                             .foregroundStyle(Theme.dim)
                             .lineLimit(1)
@@ -120,7 +122,7 @@ struct FollowingCardView: View {
                             .foregroundStyle(Theme.dim)
                         if let result = card.lastResult {
                             FormBox(result: result, size: 14)
-                            Text(result.summary)
+                            Text(result.summary(locale: locale))
                                 .foregroundStyle(Theme.foreground)
                         }
                     }
@@ -170,7 +172,8 @@ struct WhereToWatchSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionHeader(title: "WHERE TO WATCH") {
-                Text(watch.label)
+                // `label` is a catalog key.
+                Text(LocalizedStringKey(watch.label))
                     .font(Theme.font(.caption))
                     .foregroundStyle(watch.source == .espn ? Theme.win : Theme.dim)
                     .lineLimit(1)
@@ -185,6 +188,8 @@ struct LiveEventsView: View {
     let events: [KeyEvent]
     let homeTeamID: String
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
         VStack(spacing: 2) {
             ForEach(Array(events.enumerated()), id: \.offset) { _, event in
@@ -193,7 +198,7 @@ struct LiveEventsView: View {
                     Image(systemName: event.kind == .redCard ? "rectangle.portrait.fill" : "soccerball")
                         .imageScale(.small)
                         .accessibilityLabel(event.kind == .redCard ? "Red card" : "Goal")
-                    Text(event.label)
+                    Text(event.label(locale: locale))
                 }
                 .font(Theme.font(.small))
                 .foregroundStyle(event.kind == .redCard ? Theme.urgent : Theme.dim)

@@ -46,15 +46,30 @@ struct AppLanguageTests {
     }
 
     /// A system that already speaks the language keeps its regional formats
-    /// (24-hour time in Britain); any other language uses its own locale.
+    /// (24-hour time in Britain); any other language keeps the system's region.
     @Test func localeKeepsTheSystemsRegionalFormatsForTheSameLanguage() {
         let british = Locale(identifier: "en_GB")
         #expect(AppLanguage.english.locale(preferring: british) == british)
-        #expect(AppLanguage.spanish.locale(preferring: british).identifier == "es")
+        let spanishInBritain = AppLanguage.spanish.locale(preferring: british)
+        #expect(spanishInBritain.language.languageCode?.identifier == "es")
+        #expect(spanishInBritain.region?.identifier == "GB")
         let mexican = Locale(identifier: "es_MX")
         #expect(AppLanguage.spanish.locale(preferring: mexican) == mexican)
         // Region- or script-specific copies always use their own locale.
         #expect(AppLanguage.portuguese.locale(preferring: Locale(identifier: "pt_BR")) == AppLanguage.portuguese.locale)
         #expect(AppLanguage.chinese.locale(preferring: Locale(identifier: "zh_CN")) == AppLanguage.chinese.locale)
+    }
+
+    /// A Dutch Mac gets English text, but Dutch formats: 24-hour time, its dates.
+    @Test func anUnshippedSystemLanguageKeepsItsRegion() {
+        let locale = AppLanguage.english.locale(preferring: Locale(identifier: "nl_NL"))
+        #expect(locale.language.languageCode?.identifier == "en")
+        #expect(locale.region?.identifier == "NL")
+        #expect(locale.hourCycle == .zeroToTwentyThree)
+    }
+
+    /// A locale without a region (a bare language) has nothing to carry over.
+    @Test func aSystemWithoutARegionGivesTheBareLanguage() {
+        #expect(AppLanguage.german.locale(preferring: Locale(identifier: "nl")).identifier == "de")
     }
 }

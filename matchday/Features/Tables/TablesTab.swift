@@ -25,7 +25,7 @@ struct TablesTab: View {
             groups: groups,
             legend: Derivations.zoneLegend(groups),
             emptyMessage: StandingsList.emptyMessage(isLoaded: store.snapshot.tables[league] != nil,
-                                                     status: store.snapshot.status),
+                                                     status: store.snapshot.status, locale: store.locale),
             onToggleFollow: store.toggleFollow
         )
     }
@@ -60,7 +60,7 @@ struct StandingsList: View {
                     ZoneLegend(zones: legend)
                         .padding(.top, 6)
                 }
-                Text("Click a \(isNational ? "team" : "club") to follow or unfollow it.")
+                Text(isNational ? "Click a team to follow or unfollow it." : "Click a club to follow or unfollow it.")
                     .font(Theme.font(.caption))
                     .italic()
                     .foregroundStyle(Theme.dim)
@@ -69,10 +69,14 @@ struct StandingsList: View {
         }
     }
 
-    /// Text shown while a league has no table.
-    static func emptyMessage(isLoaded: Bool, status: DataStatus) -> String {
-        if isLoaded { return "No table for this league yet." }
-        return status == .offline ? "Table unavailable — check your connection." : "Loading table…"
+    /// Text shown while a league has no table, in the app language of `locale`.
+    static func emptyMessage(isLoaded: Bool, status: DataStatus,
+                             locale: Locale = AppLocalization.shared.locale) -> String {
+        let display = DisplayContext(now: .now, locale: locale)
+        if isLoaded { return display.text("No table for this league yet.", comment: "Tables tab without standings.") }
+        return status == .offline
+            ? display.text("Table unavailable — check your connection.", comment: "Tables tab while offline.")
+            : display.text("Loading table…", comment: "Tables tab while the standings load.")
     }
 }
 
@@ -95,7 +99,8 @@ struct StandingGroupView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if !group.name.isEmpty {
-                SectionHeader(title: group.name.uppercased())
+                // Group names come from ESPN.
+                SectionHeader(verbatim: group.name.uppercased())
                     .padding(.top, 6)
                     .padding(.bottom, 4)
             }
@@ -112,6 +117,9 @@ struct StandingGroupView: View {
 struct StandingsHeader: View {
     let isNational: Bool
 
+    /// Played, won, drawn, lost, goal difference: catalog keys, looked up in the app language.
+    static let columns = ["P", "W", "D", "L", "GD"]
+
     var body: some View {
         HStack(spacing: 0) {
             Text("#")
@@ -120,8 +128,8 @@ struct StandingsHeader: View {
                 .tracking(1)
                 .padding(.leading, 32)
             Spacer(minLength: 6)
-            ForEach(["P", "W", "D", "L", "GD"], id: \.self) { column in
-                Text(column)
+            ForEach(Self.columns, id: \.self) { column in
+                Text(LocalizedStringKey(column))
                     .frame(width: StandingsMetrics.numberWidth, alignment: .trailing)
             }
             Text("PTS")
@@ -216,10 +224,18 @@ struct StandingRowView: View {
         return isStriped ? Theme.foreground.opacity(0.03) : .clear
     }
 
+    @Environment(\.locale) private var locale
+
     private var accessibilityText: String {
-        var parts = ["\(entry.rank). \(entry.team.name)", "\(entry.points) points",
-                     "played \(entry.played)", "goal difference \(entry.goalDifferenceText)"]
-        if row.isFollowed { parts.insert("followed", at: 1) }
+        let display = DisplayContext(now: .now, locale: locale)
+        var parts = ["\(entry.rank). \(entry.team.name)",
+                     display.text("\(entry.points) points", comment: "VoiceOver: a team's points in the table."),
+                     display.text("played \(entry.played)", comment: "VoiceOver: matches a team has played."),
+                     display.text("goal difference \(entry.goalDifferenceText)",
+                                  comment: "VoiceOver: a team's goal difference, e.g. +3.")]
+        if row.isFollowed {
+            parts.insert(display.text("followed", comment: "VoiceOver: the user follows this team."), at: 1)
+        }
         if let zone = entry.zone, !zone.description.isEmpty { parts.append(zone.description) }
         return parts.joined(separator: ", ")
     }

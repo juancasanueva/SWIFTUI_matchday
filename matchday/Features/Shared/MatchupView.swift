@@ -57,9 +57,11 @@ struct MatchupView: View {
         }
     }
 
-    private var accessibilityText: String {
+    private var accessibilityText: Text {
         let home = match.home.team.shortName, away = match.away.team.shortName
-        return showsScore ? "\(home) \(match.home.displayScore), \(away) \(match.away.displayScore)" : "\(home) versus \(away)"
+        return showsScore
+            ? Text(verbatim: "\(home) \(match.home.displayScore), \(away) \(match.away.displayScore)")
+            : Text("\(home) versus \(away)", comment: "VoiceOver: an upcoming match, home team versus away team.")
     }
 }
 

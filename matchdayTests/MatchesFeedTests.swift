@@ -55,8 +55,8 @@ struct MatchesFeedTests {
     @Test func upcomingDaysAscendThenResultsNewestFirst() {
         let all = sections(.all)
         #expect(all.map(\.label) == [
-            "TODAY · WED OCT 21", "TOMORROW · THU OCT 22", "FRI OCT 23",
-            "YESTERDAY · TUE OCT 20", "SUN OCT 18",
+            "TODAY · WED, OCT 21", "TOMORROW · THU, OCT 22", "FRI, OCT 23",
+            "YESTERDAY · TUE, OCT 20", "SUN, OCT 18",
         ])
         #expect(all.map(\.isPast) == [false, false, false, true, true])
         #expect(all.map(\.isFirstPast) == [false, false, false, true, false])

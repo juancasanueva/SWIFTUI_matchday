@@ -28,9 +28,11 @@ struct AboutView: View {
     var body: some View {
         VStack(spacing: 14) {
             header
-            AboutCard(rows: [AboutRow(label: "Version", value: info.versionText)])
+            AboutCard(rows: [AboutRow(label: "Version", value: info.versionText,
+                                      isValueLocalized: info.versionText == AboutModel.unknownVersion)])
             AboutCard(rows: info.rows)
-            Text(info.footer)
+            // The tagline, footer and row labels are catalog keys.
+            Text(LocalizedStringKey(info.footer))
                 .font(Theme.font(.caption))
                 .foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center)
@@ -50,10 +52,10 @@ struct AboutView: View {
                 .frame(width: Self.iconSize, height: Self.iconSize)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(info.appName)
+                Text(verbatim: info.appName)
                     .font(Theme.font(.heading, weight: .bold))
                     .foregroundStyle(Theme.foreground)
-                Text(info.tagline)
+                Text(LocalizedStringKey(info.tagline))
                     .font(Theme.font(.small))
                     .foregroundStyle(Theme.dim)
                     .fixedSize(horizontal: false, vertical: true)
@@ -94,7 +96,7 @@ private struct AboutRowView: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(row.label)
+            Text(LocalizedStringKey(row.label))
                 .font(Theme.font(.body, weight: .semibold))
                 .foregroundStyle(Theme.foreground)
                 .fixedSize()
@@ -102,7 +104,7 @@ private struct AboutRowView: View {
             if let url = row.url {
                 Link(destination: url) {
                     HStack(spacing: 4) {
-                        Text(row.value)
+                        Text(verbatim: row.value)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Image(systemName: "arrow.up.forward.square")
@@ -115,7 +117,7 @@ private struct AboutRowView: View {
                 .focusEffectDisabled()
                 .help(url.absoluteString)
             } else {
-                Text(row.value)
+                (row.isValueLocalized ? Text(LocalizedStringKey(row.value)) : Text(verbatim: row.value))
                     .font(Theme.font(.small))
                     .foregroundStyle(Theme.dim)
                     .multilineTextAlignment(.trailing)

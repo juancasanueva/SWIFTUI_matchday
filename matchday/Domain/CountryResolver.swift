@@ -38,13 +38,20 @@ nonisolated struct CountryResolver: Sendable {
         return identifier.split(separator: "/").last.map { $0.replacingOccurrences(of: "_", with: " ") } ?? ""
     }
 
+    /// The same resolver naming countries in `locale` (the app's).
+    func naming(in locale: Locale) -> CountryResolver {
+        CountryResolver(regionCode: regionCode, timeZone: timeZone, locale: locale)
+    }
+
     func countryName(for code: String) -> String {
         locale.localizedString(forRegionCode: code) ?? code
     }
 
     /// "Madrid, Spain": shown next to the automatic choice (`auto_label`).
     var automaticLabel: String {
-        let name = regionCode.map(countryName(for:)) ?? "unknown"
+        let name = regionCode.map(countryName(for:))
+            ?? String(appLocalized: "unknown", bundle: locale.appBundle, locale: locale,
+                      comment: "Country of the Mac when it has no region, after the city: “Madrid, unknown”.")
         return city.isEmpty ? name : "\(city), \(name)"
     }
 }

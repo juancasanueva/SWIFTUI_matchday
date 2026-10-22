@@ -21,7 +21,8 @@ struct MatchesTab: View {
             sections: store.daySections(filter: filter),
             followedTeamIDs: Set(settings.favorites.map(\.teamID)),
             emptyMessage: MatchesList.emptyMessage(filter: filter, hasFavorites: !settings.favorites.isEmpty,
-                                                   isLoading: store.snapshot.status == .loading),
+                                                   isLoading: store.snapshot.status == .loading,
+                                                   locale: store.locale),
             footnote: store.footnote
         )
     }
@@ -61,13 +62,17 @@ struct MatchesList: View {
         }
     }
 
-    /// Text shown when no section matches the filter.
-    static func emptyMessage(filter: MatchFilter, hasFavorites: Bool, isLoading: Bool) -> String {
+    /// Text shown when no section matches the filter, in the app language of `locale`.
+    static func emptyMessage(filter: MatchFilter, hasFavorites: Bool, isLoading: Bool,
+                             locale: Locale = AppLocalization.shared.locale) -> String {
+        let display = DisplayContext(now: .now, locale: locale)
         if filter == .mine && !hasFavorites {
-            return "You're not following anyone yet — pick teams in the Teams tab."
+            return display.text("You're not following anyone yet — pick teams in the Teams tab.",
+                                comment: "Matches tab, Mine filter, with no followed team.")
         }
-        if isLoading { return "Loading fixtures…" }
-        return "No matches in the next \(RefreshPolicy.daysAhead + 1) days. International break?"
+        if isLoading { return display.text("Loading fixtures…", comment: "Shown while matches load.") }
+        return display.text("No matches in the next \(RefreshPolicy.daysAhead + 1) days. International break?",
+                            comment: "Matches tab with nothing scheduled. The argument is a number of days.")
     }
 }
 
@@ -83,7 +88,7 @@ struct MatchFilterBar: View {
                 filter = .mine
             }
             ForEach(leagues) { league in
-                Chip(title: league.short, isSelected: filter == .league(league.id), size: .small) {
+                Chip(verbatim: league.short, isSelected: filter == .league(league.id), size: .small) {
                     filter = .league(league.id)
                 }
                 .help(league.name)
@@ -110,7 +115,7 @@ struct DaySectionView: View {
                     .padding(.top, 14)
                     .padding(.bottom, 2)
             }
-            SectionHeader(title: section.label, color: section.isPast ? Theme.dim : Theme.foreground) {
+            SectionHeader(verbatim: section.label, color: section.isPast ? Theme.dim : Theme.foreground) {
                 if section.liveCount > 0 {
                     Text("● \(section.liveCount) LIVE")
                         .font(Theme.font(.caption, weight: .bold))

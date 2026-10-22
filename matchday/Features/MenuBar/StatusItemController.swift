@@ -33,6 +33,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var pulseDimmed = false
     private var pulseTask: Task<Void, Never>?
     private var reduceMotionObserver: (any NSObjectProtocol)?
+    private var languageObserver: LanguageObserver?
 
     init(store: MatchdayStore, launchAtLogin: LaunchAtLogin, updater: (any AppUpdating)?,
          openAbout: @escaping () -> Void) {
@@ -133,14 +134,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     /// effective language on launch and on every change. The SwiftUI roots
     /// follow the store through `AppLocaleRoot`.
     private func observeLanguage() {
-        let (language, locale) = withObservationTracking {
-            (store.language, store.locale)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.observeLanguage() }
+        languageObserver = LanguageObserver(store: store) { [weak self] language, locale in
+            AppLocalization.shared.apply(language, locale: locale)
+            // The bar title and tooltip are built outside SwiftUI; redraw them in the new language.
+            if self?.look != nil { self?.render() }
         }
-        AppLocalization.shared.apply(language, locale: locale)
-        // The bar title and tooltip are built outside SwiftUI; redraw them in the new language.
-        if look != nil { render() }
     }
 
     private func render(bar: BarState? = nil) {

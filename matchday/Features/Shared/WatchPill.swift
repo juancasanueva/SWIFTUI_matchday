@@ -47,7 +47,7 @@ struct WatchPill: View {
         .disabled(service.url == nil)
         .onHover { isHovered = $0 && service.url != nil }
         .animation(.easeOut(duration: 0.12), value: isHovered)
-        .help(service.url == nil ? service.name : "Open \(service.name)")
+        .help(service.url == nil ? Text(verbatim: service.name) : Text("Open \(service.name)"))
     }
 
     private var tint: Color {

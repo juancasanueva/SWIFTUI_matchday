@@ -165,7 +165,17 @@ struct MatchdayStoreTests {
         let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
                                   locale: Locale(identifier: "nl_NL"))
         #expect(store.language == .english)
-        #expect(store.locale.identifier == "en")
+        #expect(store.locale.language.languageCode?.identifier == "en")
+        // Text in English, formats from the Netherlands.
+        #expect(store.locale.region?.identifier == "NL")
+    }
+
+    @Test func aChosenLanguageKeepsTheSystemsRegion() throws {
+        let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
+                                  locale: Locale(identifier: "nl_NL"))
+        store.setLanguage(.german)
+        #expect(store.locale.language.languageCode?.identifier == "de")
+        #expect(store.locale.region?.identifier == "NL")
     }
 
     @Test func choosingALanguagePersistsAndSwitchesTheLocale() throws {
@@ -175,8 +185,9 @@ struct MatchdayStoreTests {
         #expect(store.settings.language == .japanese)
         #expect(settings.load().language == .japanese)
         #expect(store.language == .japanese)
-        #expect(store.locale.identifier == "ja")
-        #expect(store.display.locale.identifier == "ja")
+        // Japanese text, US formats: the system region survives the switch.
+        #expect(store.locale.identifier == "ja_US")
+        #expect(store.display.locale.identifier == "ja_US")
 
         // A relaunch over the same settings keeps the choice.
         let relaunched = try makeStore(makeTransport(), settings: settings)
@@ -211,9 +222,10 @@ struct MatchdayStoreTests {
         #expect(options.last?.label == "United States")
     }
 
-    @Test func countryOptionsSortInTheResolverLocale() throws {
+    /// Countries are named, and sorted, in the app language, whatever the resolver's locale.
+    @Test func countryOptionsSortInTheAppLocale() throws {
         let store = try makeStore(makeTransport(), settings: InMemorySettingsStore(),
-                                  countryLocale: Locale(identifier: "es_ES"))
+                                  countryLocale: Locale(identifier: "en_US"), locale: Locale(identifier: "es_ES"))
         #expect(store.countryOptions.dropFirst().map(\.code) == ["CA", "ES", "US", "IE", "IT", "MX", "GB"])
     }
 

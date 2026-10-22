@@ -22,8 +22,15 @@ nonisolated struct FormResult: Hashable, Sendable {
     let opponent: String
     let isHome: Bool
 
-    /// "2–1 vs Getafe" at home, "1–1 at Valencia" away.
-    var summary: String { "\(score) \(isHome ? "vs" : "at") \(opponent)" }
+    /// "2–1 vs Getafe" at home, "1–1 at Valencia" away, in the app language.
+    func summary(locale: Locale = AppLocalization.shared.locale) -> String {
+        let bundle = locale.appBundle
+        return isHome
+            ? String(appLocalized: "\(score) vs \(opponent)", bundle: bundle, locale: locale,
+                     comment: "A result at home: the score, then the opponent. vs = versus.")
+            : String(appLocalized: "\(score) at \(opponent)", bundle: bundle, locale: locale,
+                     comment: "A result away: the score, then the opponent the match was played at.")
+    }
 }
 
 /// A followed team's league position.
@@ -34,11 +41,16 @@ nonisolated struct StandingLine: Hashable, Sendable {
     let points: Int
     let played: Int
 
-    /// "9th · 6 pts · 2 played", "1st in Eastern · 9 pts · 3 played".
-    var text: String {
+    /// "9th · 6 pts · 2 played", "1st in Eastern · 9 pts · 3 played", in the app language.
+    func text(locale: Locale = AppLocalization.shared.locale) -> String {
+        let display = DisplayContext(now: .now, locale: locale)
         let groupName = group.hasSuffix(" Conference") ? String(group.dropLast(" Conference".count)) : group
-        let position = DisplayContext.ordinal(rank) + (groupName.isEmpty ? "" : " in \(groupName)")
-        return "\(position) · \(points) pts · \(played) played"
+        let rank = display.ordinal(rank)
+        let position = groupName.isEmpty ? rank
+            : display.text("\(rank) in \(groupName)",
+                           comment: "League position within a group: the ordinal rank, then the group name.")
+        return display.text("\(position) · \(points) pts · \(played) played",
+                            comment: "A team's standing: position, points (pts), matches played.")
     }
 }
 
@@ -54,7 +66,7 @@ nonisolated struct FollowingCard: Identifiable, Hashable, Sendable {
     /// Up to five recent results, oldest first.
     let form: [FormResult]
     let standing: StandingLine?
-    /// "LIVE 67'" or "NEXT · TODAY · 9:00 PM".
+    /// "LIVE 67'" or "NEXT · TODAY · 9:00 PM", in capitals.
     let kicker: String?
     /// "in 3h 53m" before kickoff; `nil` while live.
     let countdown: String?
@@ -137,9 +149,12 @@ nonisolated enum Derivations {
 
         var kicker: String?
         if let live {
-            kicker = "LIVE \(display.minute(live))"
+            kicker = display.text("LIVE \(display.minute(live))",
+                                  comment: "Card kicker of a live match: the minute or status follows. Keep it in capitals.")
         } else if let next {
-            kicker = "NEXT · \(display.dayLabel(next.kickoff).uppercased(with: display.locale)) · \(display.timeLabel(next.kickoff))"
+            let day = display.dayLabel(next.kickoff).uppercased(with: display.locale)
+            kicker = display.text("NEXT · \(day) · \(display.timeLabel(next.kickoff))",
+                                  comment: "Card kicker of the next match: day (in capitals), then kickoff time. Keep NEXT in capitals.")
         }
 
         var venue: String?
@@ -150,7 +165,12 @@ nonisolated enum Derivations {
         let thenText = after.map { after in
             let isHome = after.home.team.id == favorite.teamID
             let opponent = isHome ? after.away.team : after.home.team
-            return "THEN \(isHome ? "vs" : "at") \(opponent.shortName) · \(display.dayLabel(after.kickoff))"
+            let day = display.dayLabel(after.kickoff)
+            return isHome
+                ? display.text("THEN vs \(opponent.shortName) · \(day)",
+                               comment: "The fixture after the next one, at home: opponent, then day. Keep THEN in capitals.")
+                : display.text("THEN at \(opponent.shortName) · \(day)",
+                               comment: "The fixture after the next one, away: opponent, then day. Keep THEN in capitals.")
         }
 
         let colorHex = snapshot.teams[favorite.leagueID]?.first { $0.id == favorite.teamID }?.colorHex ?? ""

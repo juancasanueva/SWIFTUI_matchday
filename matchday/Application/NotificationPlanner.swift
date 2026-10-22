@@ -20,9 +20,16 @@ nonisolated struct MatchNotification: Hashable, Sendable {
     /// Team whose crest illustrates the alert.
     let team: Team?
 
-    /// The Settings "Test notification" alert.
-    static let test = MatchNotification(id: "test", title: "GOAL! Matchday",
-                                        body: "Notifications are working · 90'+3'", url: nil, team: nil)
+    /// The Settings "Test notification" alert, in the current app language.
+    static var test: MatchNotification {
+        MatchNotification(
+            id: "test",
+            title: String(appLocalized: "GOAL! \(AboutModel.appName)",
+                          comment: "Test notification title, imitating a goal alert. The argument is the app name."),
+            body: String(appLocalized: "Notifications are working · \("90'+3'")",
+                         comment: "Test notification body. The argument is a sample stoppage-time minute."),
+            url: nil, team: nil)
+    }
 }
 
 /// What has already been announced (`notified.json`): kickoff reminders and
@@ -71,16 +78,29 @@ nonisolated enum NotificationPlanner {
         settings: AppSettings,
         memory: NotificationMemory,
         now: Date,
-        watch: (Match) -> WatchOptions
+        watch: (Match) -> WatchOptions,
+        bundle: Bundle = AppLocalization.shared.bundle,
+        locale: Locale = AppLocalization.shared.locale
     ) -> NotificationPlan {
+        let text = Wording(bundle: bundle, locale: locale)
         var plan = NotificationPlan(memory: memory)
         for match in matches {
             guard let followed = followedSide(of: match, settings: settings) else { continue }
-            kickoff(match, followed: followed, settings: settings, now: now, watch: watch, into: &plan)
-            goal(match, followed: followed, settings: settings, now: now, into: &plan)
-            fullTime(match, followed: followed, settings: settings, now: now, into: &plan)
+            kickoff(match, followed: followed, settings: settings, now: now, watch: watch, text: text, into: &plan)
+            goal(match, followed: followed, settings: settings, now: now, text: text, into: &plan)
+            fullTime(match, followed: followed, settings: settings, now: now, text: text, into: &plan)
         }
         return plan
+    }
+
+    /// Resolves alert texts in one language.
+    private struct Wording {
+        let bundle: Bundle
+        let locale: Locale
+
+        func callAsFunction(_ value: String.LocalizationValue, comment: StaticString) -> String {
+            String(appLocalized: value, bundle: bundle, locale: locale, comment: comment)
+        }
     }
 
     /// The followed side; home when both teams are followed.
@@ -93,7 +113,7 @@ nonisolated enum NotificationPlanner {
     // MARK: Rules
 
     private static func kickoff(_ match: Match, followed: MatchSide, settings: AppSettings, now: Date,
-                                watch: (Match) -> WatchOptions, into plan: inout NotificationPlan) {
+                                watch: (Match) -> WatchOptions, text: Wording, into plan: inout NotificationPlan) {
         let remaining = match.kickoff.timeIntervalSince(now)
         let lead = TimeInterval(settings.kickoffLead * 60)
         guard match.state == .pre, remaining >= 0, remaining <= lead,
@@ -104,16 +124,18 @@ nonisolated enum NotificationPlanner {
 
         let minutes = max(1, Int((remaining / 60).rounded()))
         let names = watch(match).names(limit: watchNameLimit)
+        let channels = names.joined(separator: ", ")
         let body = names.isEmpty ? (League.with(id: match.leagueID)?.name ?? match.leagueID)
-            : "Watch on " + names.joined(separator: ", ")
+            : text("Watch on \(channels)", comment: "Kickoff reminder body: the channels showing the match.")
         plan.notifications.append(MatchNotification(
             id: "kick-\(match.id)",
-            title: "\(match.home.team.shortName) vs \(match.away.team.shortName) in \(minutes) min",
+            title: text("\(match.home.team.shortName) vs \(match.away.team.shortName) in \(minutes) min",
+                        comment: "Kickoff reminder title: home vs away team, then minutes to kickoff. vs = versus."),
             body: body, url: match.espnURL, team: followed.team))
     }
 
     private static func goal(_ match: Match, followed: MatchSide, settings: AppSettings, now: Date,
-                             into plan: inout NotificationPlan) {
+                             text: Wording, into plan: inout NotificationPlan) {
         guard match.state != .pre, match.home.score != nil else { return }
         let home = match.home.goals ?? 0, away = match.away.goals ?? 0
         let score = "\(match.home.score ?? "0")-\(match.away.score ?? "0")"
@@ -129,13 +151,15 @@ nonisolated enum NotificationPlanner {
         let ours = scorer.team.id == followed.team.id
         plan.notifications.append(MatchNotification(
             id: "goal-\(match.id)",
-            title: (ours ? "GOAL! " : "Goal · ") + scorer.team.shortName,
-            body: scoreLine(match) + scorerSuffix(match, scorer: scorer),
+            title: ours
+                ? text("GOAL! \(scorer.team.shortName)", comment: "Goal alert title when a followed team scores.")
+                : text("Goal · \(scorer.team.shortName)", comment: "Goal alert title when the opponent scores."),
+            body: scoreLine(match) + scorerSuffix(match, scorer: scorer, text: text),
             url: match.espnURL, team: scorer.team))
     }
 
     private static func fullTime(_ match: Match, followed: MatchSide, settings: AppSettings, now: Date,
-                                 into plan: inout NotificationPlan) {
+                                 text: Wording, into plan: inout NotificationPlan) {
         guard match.isFinal, plan.memory.final[match.id] == nil else { return }
         plan.memory.final[match.id] = now
         plan.changed = true
@@ -143,9 +167,14 @@ nonisolated enum NotificationPlanner {
 
         let opponent = followed.team.id == match.home.team.id ? match.away : match.home
         let mine = followed.goals ?? 0, theirs = opponent.goals ?? 0
-        let verdict = mine > theirs ? "Win" : mine < theirs ? "Loss" : "Draw"
+        let team = followed.team.shortName
+        let title = mine > theirs
+            ? text("Full time · Win for \(team)", comment: "Full-time alert title: the followed team won.")
+            : mine < theirs
+            ? text("Full time · Loss for \(team)", comment: "Full-time alert title: the followed team lost.")
+            : text("Full time · Draw for \(team)", comment: "Full-time alert title: the followed team drew.")
         plan.notifications.append(MatchNotification(
-            id: "final-\(match.id)", title: "Full time · \(verdict) for \(followed.team.shortName)",
+            id: "final-\(match.id)", title: title,
             body: scoreLine(match), url: match.espnURL, team: followed.team))
     }
 
@@ -158,7 +187,7 @@ nonisolated enum NotificationPlanner {
 
     /// " · Mbappé 51'" for the latest goal by `scorer`. ESPN is not consistent
     /// about which team an own goal is credited to, so any own goal counts.
-    private static func scorerSuffix(_ match: Match, scorer: MatchSide) -> String {
+    private static func scorerSuffix(_ match: Match, scorer: MatchSide, text: Wording) -> String {
         let goal = match.keyEvents.last { event in
             switch event.kind {
             case .goal, .penalty: event.teamID == scorer.team.id
@@ -167,7 +196,9 @@ nonisolated enum NotificationPlanner {
             }
         }
         guard let goal else { return "" }
-        let player = goal.kind == .ownGoal ? "\(goal.player) (OG)" : goal.player
+        let player = goal.kind == .ownGoal
+            ? text("\(goal.player) (OG)", comment: "A player credited with an own goal (OG).")
+            : goal.player
         return " · \(player) \(goal.minute)"
     }
 

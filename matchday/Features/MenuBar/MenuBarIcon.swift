@@ -38,12 +38,15 @@ nonisolated struct StatusItemLook: Equatable, Sendable {
         title = bar.liveText ?? ""
         tooltip = bar.tooltip
         pulses = dot == .live && !reduceMotion
+        // Built outside SwiftUI: in the language bundle the status item applies.
         accessibilityLabel = if bar.isLive {
-            "Matchday, a followed team is live"
+            String(appLocalized: "Matchday, a followed team is live",
+                   comment: "VoiceOver label of the menu bar icon while a followed team plays.")
         } else if bar.showDot {
-            "Matchday, a followed team plays soon"
+            String(appLocalized: "Matchday, a followed team plays soon",
+                   comment: "VoiceOver label of the menu bar icon when a followed team plays within 12 hours.")
         } else {
-            "Matchday"
+            AboutModel.appName
         }
     }
 

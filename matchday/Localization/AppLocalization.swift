@@ -27,13 +27,16 @@ nonisolated final class AppLocalization: Sendable {
     /// Read from any isolation (derivations are `nonisolated`), written on the main actor.
     private let state: Mutex<State>
 
+    /// Starts on the development language until `apply` says otherwise, so the
+    /// unit-test host (which never applies one) reads English on any Mac.
+    ///
     /// - Parameter base: The bundle carrying the `.lproj` folders.
     init(base: Bundle = .main) {
         self.base = base
-        state = Mutex(State(bundle: base, locale: .current))
+        state = Mutex(State(bundle: Self.bundle(for: .english, in: base), locale: AppLanguage.english.locale))
     }
 
-    /// The bundle localized strings resolve from: the language's `.lproj`, or the base bundle.
+    /// The bundle localized strings resolve from: the language's `.lproj`, else English's.
     var bundle: Bundle {
         state.withLock { $0.bundle }
     }
@@ -50,9 +53,24 @@ nonisolated final class AppLocalization: Sendable {
         state.withLock { $0 = State(bundle: bundle, locale: locale) }
     }
 
-    /// The `.lproj` bundle of a language, or `base` when it carries no such localization.
+    /// The `.lproj` bundle of a language, else the development language's
+    /// (`en.lproj`), else `base`. Not `base` first: its lookups follow the system
+    /// languages, so a Spanish Mac would read Spanish for a language not shipped yet.
     static func bundle(for language: AppLanguage, in base: Bundle = .main) -> Bundle {
-        base.path(forResource: language.rawValue, ofType: "lproj").flatMap(Bundle.init(path:)) ?? base
+        lproj(language, in: base) ?? lproj(.english, in: base) ?? base
+    }
+
+    private static func lproj(_ language: AppLanguage, in base: Bundle) -> Bundle? {
+        base.path(forResource: language.rawValue, ofType: "lproj").flatMap(Bundle.init(path:))
+    }
+}
+
+nonisolated extension Locale {
+    /// The language bundle of the app language this locale stands for. In a
+    /// SwiftUI view, `\.locale` is the app locale (`AppLocaleRoot`), so a string
+    /// built in the view resolves in the same language as its literals.
+    var appBundle: Bundle {
+        AppLocalization.bundle(for: .matching(self))
     }
 }
 

@@ -8,13 +8,34 @@
 import SwiftUI
 
 struct Chip: View {
-    let title: String
+    let title: Text
     var systemImage: String?
     let isSelected: Bool
     var size: Theme.Size = .body
     let action: () -> Void
 
     @State private var isHovered = false
+
+    /// A literal title, looked up in the string catalog.
+    init(title: LocalizedStringKey, systemImage: String? = nil, isSelected: Bool, size: Theme.Size = .body,
+         action: @escaping () -> Void) {
+        self.init(text: Text(title), systemImage: systemImage, isSelected: isSelected, size: size, action: action)
+    }
+
+    /// Data drawn as is, never translated: league short names.
+    init(verbatim title: String, systemImage: String? = nil, isSelected: Bool, size: Theme.Size = .body,
+         action: @escaping () -> Void) {
+        self.init(text: Text(verbatim: title), systemImage: systemImage, isSelected: isSelected, size: size,
+                  action: action)
+    }
+
+    private init(text: Text, systemImage: String?, isSelected: Bool, size: Theme.Size, action: @escaping () -> Void) {
+        title = text
+        self.systemImage = systemImage
+        self.isSelected = isSelected
+        self.size = size
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -23,7 +44,7 @@ struct Chip: View {
                     Image(systemName: systemImage)
                         .imageScale(.small)
                 }
-                Text(title)
+                title
                     .lineLimit(1)
             }
             .font(Theme.font(size, weight: isSelected ? .semibold : .regular))

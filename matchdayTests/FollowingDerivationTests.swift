@@ -16,15 +16,15 @@ struct DisplayContextTests {
         #expect(display.dayLabel(utcDate(2026, 10, 21, 23, 59)) == "Today")
         #expect(display.dayLabel(utcDate(2026, 10, 22, 0, 30)) == "Tomorrow")
         #expect(display.dayLabel(utcDate(2026, 10, 20, 12)) == "Yesterday")
-        #expect(display.dayLabel(utcDate(2026, 10, 23, 19)) == "Fri Oct 23")
-        #expect(display.dayLabel(utcDate(2026, 10, 18, 19)) == "Sun Oct 18")
+        #expect(display.dayLabel(utcDate(2026, 10, 23, 19)) == "Fri, Oct 23")
+        #expect(display.dayLabel(utcDate(2026, 10, 18, 19)) == "Sun, Oct 18")
     }
 
     @Test func sectionLabelsAddTheDateToRelativeDays() {
-        #expect(display.sectionLabel(utcDate(2026, 10, 21, 21)) == "TODAY · WED OCT 21")
-        #expect(display.sectionLabel(utcDate(2026, 10, 22, 21)) == "TOMORROW · THU OCT 22")
-        #expect(display.sectionLabel(utcDate(2026, 10, 20, 21)) == "YESTERDAY · TUE OCT 20")
-        #expect(display.sectionLabel(utcDate(2026, 10, 23, 21)) == "FRI OCT 23")
+        #expect(display.sectionLabel(utcDate(2026, 10, 21, 21)) == "TODAY · WED, OCT 21")
+        #expect(display.sectionLabel(utcDate(2026, 10, 22, 21)) == "TOMORROW · THU, OCT 22")
+        #expect(display.sectionLabel(utcDate(2026, 10, 20, 21)) == "YESTERDAY · TUE, OCT 20")
+        #expect(display.sectionLabel(utcDate(2026, 10, 23, 21)) == "FRI, OCT 23")
     }
 
     @Test func timeLabelUsesTheLocaleShortTime() {
@@ -54,7 +54,20 @@ struct DisplayContextTests {
 
     @Test(arguments: ordinalCases)
     func ordinals(rank: Int, expected: String) {
-        #expect(DisplayContext.ordinal(rank) == expected)
+        #expect(display.ordinal(rank) == expected)
+    }
+
+    /// Ordinals follow the app locale, not English suffixes.
+    @Test(arguments: [("fr", "1er"), ("es", "1.º"), ("de", "1."), ("it", "1º"), ("ja", "第1")])
+    func ordinalsFollowTheLocale(identifier: String, expected: String) {
+        let display = DisplayContext(now: display.now, calendar: utcCalendar(), locale: Locale(identifier: identifier))
+        #expect(display.ordinal(1) == expected)
+    }
+
+    /// The short date follows the locale's field order.
+    @Test func shortDateFollowsTheLocale() {
+        let german = DisplayContext(now: display.now, calendar: utcCalendar(), locale: Locale(identifier: "de_DE"))
+        #expect(german.shortDate(utcDate(2026, 10, 23, 19)) == "Fr. 23. Okt.")
     }
 
     @Test func liveMinuteAndStatusText() {
@@ -134,14 +147,14 @@ struct FollowingDerivationTests {
             FormResult(matchID: "v", outcome: .draw, score: "1–1", opponent: "Valencia", isHome: false),
             FormResult(matchID: "g", outcome: .win, score: "2–1", opponent: "Getafe", isHome: true),
         ])
-        #expect(card.lastResult?.summary == "2–1 vs Getafe")
-        #expect(card.form.first?.summary == "1–1 at Valencia")
-        #expect(card.standing?.text == "9th · 6 pts · 2 played")
+        #expect(card.lastResult?.summary() == "2–1 vs Getafe")
+        #expect(card.form.first?.summary() == "1–1 at Valencia")
+        #expect(card.standing?.text() == "9th · 6 pts · 2 played")
         #expect(card.kicker == "NEXT · TODAY · 9:00 PM")
         #expect(card.countdown == "in 3h 53m")
         #expect(card.venue == "Santiago Bernabéu, Madrid")
         #expect(card.watch == tv)
-        #expect(card.thenText == "THEN at Atlético · Sun Oct 25")
+        #expect(card.thenText == "THEN at Atlético · Sun, Oct 25")
         #expect(card.liveEvents.isEmpty)
     }
 
@@ -160,7 +173,7 @@ struct FollowingDerivationTests {
         #expect(card.kicker == "LIVE 67'")
         #expect(card.countdown == nil)
         #expect(card.venue == nil)
-        #expect(card.liveEvents.map(\.label) == ["Vinícius Júnior 12'", "Isco 40' (P)", "Rüdiger 55'"])
+        #expect(card.liveEvents.map { $0.label() } == ["Vinícius Júnior 12'", "Isco 40' (P)", "Rüdiger 55'"])
     }
 
     @Test func formKeepsTheLastFiveResults() throws {
@@ -201,7 +214,7 @@ struct FollowingDerivationTests {
                                   goalDifference: 5, points: 9, zone: nil)
         let tables = ["eng.1": [StandingGroup(name: "Eastern Conference", entries: [entry])]]
         let card = try #require(cards(Make.snapshot([], tables: tables), following: [arsenal]).first)
-        #expect(card.standing?.text == "1st in Eastern · 9 pts · 3 played")
+        #expect(card.standing?.text() == "1st in Eastern · 9 pts · 3 played")
     }
 
     @Test func liveFirstThenByKickoffThenNothingScheduledInFollowOrder() {

@@ -8,13 +8,27 @@
 import SwiftUI
 
 struct SectionHeader<Trailing: View>: View {
-    let title: String
+    let title: Text
     var color: Color = Theme.foreground
     @ViewBuilder var trailing: Trailing
 
+    /// A literal title, looked up in the string catalog.
+    init(title: LocalizedStringKey, color: Color = Theme.foreground, @ViewBuilder trailing: () -> Trailing) {
+        self.title = Text(title)
+        self.color = color
+        self.trailing = trailing()
+    }
+
+    /// Text drawn as is: an already localized day label, or a group name from ESPN.
+    init(verbatim title: String, color: Color = Theme.foreground, @ViewBuilder trailing: () -> Trailing) {
+        self.title = Text(verbatim: title)
+        self.color = color
+        self.trailing = trailing()
+    }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title)
+            title
                 .font(Theme.font(.caption, weight: .bold))
                 .tracking(1)
                 .foregroundStyle(color)
@@ -26,8 +40,12 @@ struct SectionHeader<Trailing: View>: View {
 }
 
 extension SectionHeader where Trailing == EmptyView {
-    init(title: String, color: Color = Theme.foreground) {
+    init(title: LocalizedStringKey, color: Color = Theme.foreground) {
         self.init(title: title, color: color) { EmptyView() }
+    }
+
+    init(verbatim title: String, color: Color = Theme.foreground) {
+        self.init(verbatim: title, color: color) { EmptyView() }
     }
 }
 
@@ -60,7 +78,7 @@ extension View {
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
         SectionHeader(title: "LIVE ELSEWHERE", color: Theme.urgent)
-        SectionHeader(title: "TODAY · WED OCT 21") {
+        SectionHeader(verbatim: "TODAY · WED, OCT 21") {
             Text("● 2 LIVE").font(Theme.font(.caption, weight: .bold)).foregroundStyle(Theme.urgent).pulsing(true)
         }
     }
